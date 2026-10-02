@@ -1,0 +1,54 @@
+{
+  "skill_name": "agent-spec-readme-generator",
+  "evals": [
+    {
+      "id": 0,
+      "name": "library-chronos-lite",
+      "prompt": "Preciso de um README decente pra essa lib aqui: /Volumes/Dev/repos/adi_agent_spec/.claude/skills/agent-spec-readme-generator-workspace/fixtures/chronos-lite — pode gerar e salvar o README.md dentro dela?",
+      "expected_output": "README.md variante library: Sobre antes de instalação, comandos reais (npm/vitest), exemplo de import funcional, seção API com as 3 funções, licença MIT, sem placeholders {{}} nem comentários <!-- -->.",
+      "files": [],
+      "assertions": [
+        "README.md foi gerado no diretório de saída",
+        "Sem placeholders {{...}} remanescentes",
+        "Sem comentários-guia <!-- --> remanescentes",
+        "Porquê (Sobre/About) aparece antes da instalação/uso",
+        "Documenta as funções reais formatISODate, diffHuman, addDays",
+        "Cita licença MIT",
+        "Comando de teste real (vitest/npm test)"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "cli-quicknote",
+      "prompt": "monta um README pro meu CLI em /Volumes/Dev/repos/adi_agent_spec/.claude/skills/agent-spec-readme-generator-workspace/fixtures/quicknote e salva lá dentro",
+      "expected_output": "README.md variante cli: tabela de comandos (add/list/--version), exemplos com output, comando de instalação global real, SEM seção API. Deve sinalizar que falta LICENSE sem criá-la. Sem placeholders nem comentários remanescentes.",
+      "files": [],
+      "assertions": [
+        "README.md foi gerado no diretório de saída",
+        "Sem placeholders {{...}} remanescentes",
+        "Sem comentários-guia <!-- --> remanescentes",
+        "Porquê (Sobre/About) aparece antes da instalação/uso",
+        "Documenta comandos add e list",
+        "Sem seção API (variante CLI a poda)",
+        "Ausência de LICENSE sinalizada (sem inventar licença)",
+        "Instalação global real do CLI"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "service-pulse-api",
+      "prompt": "documenta esse serviço pra mim: /Volumes/Dev/repos/adi_agent_spec/.claude/skills/agent-spec-readme-generator-workspace/fixtures/pulse-api — quero que dê pra alguém novo subir local. Salva o README.md na pasta.",
+      "expected_output": "README.md variante service: como subir (docker compose / make up reais), tabela de variáveis de ambiente (PULSE_ADDR, DATABASE_URL), endpoints (GET /healthz, POST/GET /pings), pré-requisitos. Sem placeholders nem comentários remanescentes.",
+      "files": [],
+      "assertions": [
+        "README.md foi gerado no diretório de saída",
+        "Sem placeholders {{...}} remanescentes",
+        "Sem comentários-guia <!-- --> remanescentes",
+        "Porquê (Sobre/About) aparece antes da instalação/uso",
+        "Caminho de subida real (docker compose / make up)",
+        "Documenta env vars PULSE_ADDR e DATABASE_URL",
+        "Documenta endpoints /healthz e /pings"
+      ]
+    }
+  ]
+}

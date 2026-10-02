@@ -1,0 +1,75 @@
+{
+  "skill_name": "agent-spec-sdd-generate-task-plan",
+  "evals": [
+    {
+      "id": 0,
+      "name": "fluxo-completo-aceitando-defaults",
+      "prompt": "Gere o TASK PLAN completo para o carrinho de compras. O TECH_SPEC aprovado está em docs/specs/features/carrinho-eval-0/v1/tech_spec.md. Para agilizar, aceite todas as fases e decomposições sugeridas sem me perguntar — quero ver o task_plan.md e todas as tasks individuais gerados em uma única passada. Salve tudo nos paths corretos.",
+      "expected_output": "A skill deve ler o tech_spec.md e prd.md, propor fases, gerar tasks individuais (T1.md, T2.md, ...) aplicando regras anti-fragmentação, salvar cada tasks/TN.md no disco ANTES de avançar, montar task_plan.md como ÍNDICE/REFERÊNCIA (sem corpo de task), delegar Seção 6 ao agent-spec-qa-test-generator (ou redistribuir heurísticamente via Estratégia de Testes com 45 CTs disponíveis), preencher model/risk/gates em cada task, atualizar _run/sdd_state.yaml com current_step: task_plan e NÃO sugerir iniciar execução.",
+      "files": [
+        "docs/specs/features/carrinho-eval-0/v1/tech_spec.md",
+        "docs/specs/features/carrinho-eval-0/v1/prd.md"
+      ],
+      "expectations": [
+        "O arquivo task_plan.md foi gerado no outputs dir",
+        "Existem pelo menos 5 arquivos tasks/TN.md no outputs dir",
+        "O task_plan.md contém uma tabela com links para tasks/TN.md (ex: [T1](tasks/T1.md))",
+        "O task_plan.md NÃO contém a string '## 2. Objetivo da Task' nem '## 3. Descrição Detalhada' (corpo de task não deve estar no task_plan)",
+        "Pelo menos um arquivo TN.md contém os campos 'model:', 'risk:' e 'gates:' no frontmatter da seção 1",
+        "Pelo menos um arquivo TN.md contém a seção '## 6. Testes' preenchida (não apenas cabeçalho vazio)",
+        "O _run/sdd_state.yaml copiado contém 'current_step: task_plan' e 'status: completed' sob steps.task_plan",
+        "O task_plan.md contém uma tabela de rastreabilidade mapeando pelo menos US-01 e US-09",
+        "O transcript.md confirma que a skill NÃO sugeriu executar tasks nem mencionou o próximo comando do pipeline"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "anti-fragmentacao-wire-up-absorvido",
+      "prompt": "Gere o TASK PLAN para o carrinho de compras em docs/specs/features/carrinho-eval-0/v1/tech_spec.md. Aceite todas as fases sugeridas. Porém, preste atenção especial à decomposição: quero verificar se você aplica corretamente as regras anti-fragmentação — especificamente que wire-ups de DI, registros de rota e ajustes triviais de struct NÃO existem como tasks separadas.",
+      "expected_output": "A skill deve aplicar as Regras 1-10 de anti-fragmentação: (1) não criar tasks apenas de wire-up/DI, (2) não criar tasks apenas de registro de rota, (3) absorver ajustes triviais de struct/type nas tasks funcionais. O número de tasks deve estar entre 5-12. Tasks triviais de 'Integração' (wire-up agrupado) são aceitas se agrupam vários itens.",
+      "files": [
+        "docs/specs/features/carrinho-eval-0/v1/tech_spec.md"
+      ],
+      "expectations": [
+        "Nenhum arquivo TN.md tem como único objetivo registrar um componente no container DI (sem introduzir comportamento testável)",
+        "Nenhum arquivo TN.md tem como único objetivo adicionar uma rota ao router (sem código funcional associado)",
+        "O número de arquivos TN.md no outputs dir está entre 5 e 12 (faixa para feature média com 9 USs)",
+        "Se há uma task de 'Integração' (wire-up agrupado), ela engloba múltiplos itens de registro/wiring na seção 3 ou 5",
+        "Cada arquivo TN.md tem pelo menos um critério de aceite técnico objetivo na seção 4 (não apenas 'implementar X')"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "separacao-task-plan-referencia-vs-detalhe",
+      "prompt": "Gere o TASK PLAN completo para o carrinho de compras (tech_spec em docs/specs/features/carrinho-eval-0/v1/tech_spec.md). Aceite todas as fases. Quero verificar especificamente se o task_plan.md é um documento de REFERÊNCIA/ÍNDICE e o detalhamento completo está APENAS nos arquivos tasks/TN.md separados.",
+      "expected_output": "O task_plan.md deve ser um documento enxuto de referência. O detalhamento técnico de cada task deve estar EXCLUSIVAMENTE em tasks/TN.md.",
+      "files": [
+        "docs/specs/features/carrinho-eval-0/v1/tech_spec.md"
+      ],
+      "expectations": [
+        "O task_plan.md NÃO contém a string '## 3. Descrição Detalhada' (corpo detalhado de task não deve estar no task_plan)",
+        "O task_plan.md NÃO contém a string '## 5. Arquivos Impactados' (seção de arquivos não deve estar no task_plan)",
+        "O task_plan.md contém links para tasks/TN.md no formato [TN](tasks/TN.md)",
+        "Cada arquivo TN.md contém '## 3. Descrição Detalhada' com explicação técnica de como implementar",
+        "Cada arquivo TN.md contém '## 5. Arquivos Impactados' com as subseções 5.1, 5.2 e 5.3",
+        "O task_plan.md contém tabela de rastreabilidade User Stories com mapeamento de pelo menos US-01 a US-09"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "paralelismo-derivado-e-coerente",
+      "prompt": "Gere o TASK PLAN completo para o carrinho de compras (tech_spec em docs/specs/features/carrinho-eval-0/v1/tech_spec.md). Aceite todas as fases sugeridas. Quero verificar especificamente a derivação do flag de paralelismo (Regra 10d): ele deve ser COMPUTADO a partir das dependências e dos símbolos criados/consumidos, nunca autorado por intuição, e deve respeitar o Invariante de Paralelismo.",
+      "expected_output": "A skill deve preencher 'Símbolos públicos criados' e 'Símbolos consumidos de outras tasks' na seção 1 de cada TN.md (ou N/A), e derivar a coluna 'Pode Rodar em Paralelo?' do task_plan.md aplicando o Invariante de Paralelismo de agent-spec-workflow-rules.md. Nenhuma task marcada 'Sim' pode depender (direta ou transitivamente) de outra task da MESMA fase. Default na incerteza: Não.",
+      "files": [
+        "docs/specs/features/carrinho-eval-0/v1/tech_spec.md"
+      ],
+      "expectations": [
+        "Cada arquivo TN.md contém na seção 1 os campos 'Símbolos públicos criados' e 'Símbolos consumidos de outras tasks' (preenchidos com símbolos concretos ou 'N/A')",
+        "Nenhuma task marcada 'Pode Rodar em Paralelo? = Sim' na tabela do task_plan.md tem, na coluna Dependências, outra task da MESMA Fase (invariante flag↔deps)",
+        "Se alguma task consome um símbolo criado por outra task da mesma fase, a task consumidora NÃO está marcada como paralela (Sim) — ou foi reordenada para fase posterior",
+        "A coluna de paralelismo do task_plan.md está anotada como derivada (cabeçalho contém 'derivado') e não há tasks marcadas 'Sim' que toquem o mesmo arquivo de registro compartilhado (container DI, router, barrel, manifest, migrations)",
+        "Para cada par de tasks marcadas 'Sim' na mesma fase, a união de arquivos das seções 5.1+5.2 de uma não intersecciona com a da outra (paths disjuntos)"
+      ]
+    }
+  ]
+}

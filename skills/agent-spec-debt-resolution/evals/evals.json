@@ -1,0 +1,23 @@
+{
+  "skill_name": "agent-spec-debt-resolution",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Tem um _run/run-report.md em docs/specs/features/cadastro-pratos-franquia/v1/ com vários débitos MED/BAIXO acumulados depois que rodei a feature inteira. Quero limpar — gera uma versão de cleanup que eu possa rodar pelo /agent-spec-minispec-run-tasks.",
+      "expected_output": "A skill /agent-spec-debt-resolution deve: (a) ler _run/run-report.md, (b) classificar débitos via agente especialista, (c) apresentar interativamente quais incluir, (d) gerar docs/specs/features/cadastro-pratos-franquia/v2-debits/ com intent.md + scope.md + task_plan.md + tasks/T{n}.md prontos para /agent-spec-minispec-run-tasks.",
+      "files": ["docs/specs/features/cadastro-pratos-franquia/v1/_run/run-report.md"]
+    },
+    {
+      "id": 2,
+      "prompt": "Roda a skill de débitos na feature catalogo-digital v1 — quero ver o que sobrou pra limpar antes de começar a v2.",
+      "expected_output": "Skill identifica _run/run-report.md em docs/specs/features/catalogo-digital/v1/. Se não houver débitos elegíveis, aborta limpamente sem criar v2-debits/. Se houver, segue o fluxo normal.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Tem 12 débitos pequenos anotados na v1 da feature renomear-impressora — só quero limpar os que a LLM acha que valem a pena, ignora os de perfumaria.",
+      "expected_output": "Na FASE 3 (apresentação interativa), usuário deve escolher 'Incluir TODOS os recomendados' como atalho global. Skill gera v2-debits/ apenas com tasks dos débitos classificados como recomendado_corrigir; os perfumaria viram §2 do scope.md (Fora do escopo) com motivo 'não selecionado nesta rodada'.",
+      "files": []
+    }
+  ]
+}

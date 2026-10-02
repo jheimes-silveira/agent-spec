@@ -1,0 +1,106 @@
+{
+  "skill_name": "agent-spec-generate-design",
+  "evals": [
+    {
+      "id": 1,
+      "name": "web-sem-figma-propoe-do-design-system",
+      "prompt": "/docs/specs/features/dashboard-vendas/v1/prd.md",
+      "expected_output": "Apenas o PRD foi passado (sem referências de design). A skill detecta SDD, confirma a frente via AskUserQuestion, ancora no design system real do projeto (tokens, componentes, padrões de loading/erro existentes) e PROPÕE o design tela a tela — layout, estados visuais concretos — sem exigir Figma. Salva design.md no path resolvido.",
+      "files": [],
+      "expectations": [
+        "A skill detecta o framework SDD pelo nome prd.md",
+        "A skill pergunta a frente via AskUserQuestion (web/mobile/backend) antes de qualquer geração",
+        "A skill funciona SEM Figma/mockups — propõe a partir do PRD + design system existente, sem bloquear",
+        "A skill varre o design system real do codebase (tema, tokens, componentes compartilhados) antes de propor",
+        "Cada tela do PRD aparece no Mapa Visual com layout descrito e os 4 estados (loading/sucesso/erro/vazio) concretos",
+        "Componentes reutilizados citam origem; componentes novos têm justificativa de inexistência",
+        "A skill salva design.md no path resolvido via design.feature.path ANTES de apresentar o resumo",
+        "A skill NÃO inicia automaticamente a TECH_SPEC nem sugere o próximo comando do framework"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "backend-recusado-com-orientacao",
+      "prompt": "/docs/specs/features/api-pagamentos/v1/prd.md",
+      "expected_output": "Feature backend. Ao confirmar a frente como Backend, a skill encerra com orientação clara (estados de API ficam na tech spec backend / contrato de handoff) e NÃO cria nenhum arquivo.",
+      "files": [],
+      "expectations": [
+        "A skill pergunta a frente via AskUserQuestion mesmo que o nome da feature sugira backend",
+        "Ao confirmar Backend, a skill encerra com orientação (tech spec backend + /agent-spec-backend-contract-handoff)",
+        "Nenhum design.md, design-system.md ou diretório é criado",
+        "A skill não tenta adaptar o template web/mobile para backend"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "estados-visuais-concretos-nao-genericos",
+      "prompt": "/docs/specs/features/lista-pedidos/v1/intent.md a tela principal é uma lista de pedidos com filtro por status",
+      "expected_output": "miniSpec detectado. O documento gerado especifica estados visuais CONCRETOS e verificáveis (ex.: 'skeleton com 5 linhas', 'empty state com ilustração + CTA Criar pedido', 'banner inline com Tentar novamente') em vez de células genéricas ('mostrar loading', 'mostrar erro'). Mensagens de erro literais na subseção 5.1.",
+      "files": [],
+      "expectations": [
+        "A skill detecta miniSpec pelo nome intent.md",
+        "A tabela de estados (seção 5) descreve comportamento concreto por célula — nunca 'mostrar loading/erro' genérico",
+        "Os estados seguem o padrão visual JÁ existente no projeto (se o projeto usa skeleton, propõe skeleton)",
+        "A subseção de mensagens traz textos literais e ação de recuperação por cenário",
+        "A skill mantém a trava inferior: nada de gestão de estado, endpoints ou nomes de arquivos de código"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "separacao-global-vs-feature-com-confirmacao",
+      "prompt": "/docs/specs/features/checkout/v1/prd.md o checkout vai introduzir um novo componente de stepper e um tom de verde que não existe na paleta",
+      "expected_output": "O stepper (componente reutilizável) e o token de cor novo são classificados como candidatos ao design-system.md GLOBAL. A skill confirma com o usuário antes de promover, faz update cirúrgico do global (apenas as entradas novas) e mantém telas/estados no design.md da feature.",
+      "files": [],
+      "expectations": [
+        "A skill verifica que stepper e o tom de verde não existem no design system/projeto antes de aceitá-los como novos",
+        "Componente e token novos reutilizáveis são classificados como candidatos ao GLOBAL (tabela da rule comum)",
+        "A promoção ao design-system.md só acontece após confirmação explícita do usuário",
+        "O update do design-system.md é cirúrgico (entradas novas), nunca reescrita do arquivo",
+        "Telas, layouts e estados ficam no design.md da feature (não vazam para o global)",
+        "Se a decisão for transversal com trade-off real, é sinalizada como candidata a ADR tag ui via /agent-spec-adr-create (não criada)"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "figma-como-referencia-vira-transcricao-verificada",
+      "prompt": "/docs/specs/features/perfil-usuario/v1/prd.md https://figma.com/file/abc123/perfil — o design já está pronto nesse Figma",
+      "expected_output": "Com referência de Figma fornecida, o trabalho vira transcrição estruturada + verificação contra o design system: a skill tenta usar MCP de Figma se disponível (sem bloquear se ausente), pede descrição/screenshots como fallback, e SINALIZA componentes do mockup que não existem no projeto.",
+      "files": [],
+      "expectations": [
+        "A skill trata o link de Figma como referência primária a destrinchar, não re-propõe o design do zero",
+        "Sem MCP de Figma disponível, a skill NÃO bloqueia — pede descrição ou screenshots como fallback",
+        "Componentes presentes no mockup mas ausentes no design system do projeto são sinalizados na tabela de novos",
+        "A skill não decide produto: divergência entre Figma e PRD vira ponto em aberto/dependência, não decisão própria",
+        "O design.md final é estruturado no template (não um dump do Figma)"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "nao-reabre-produto-nem-desce-a-tecnica",
+      "prompt": "/docs/specs/features/cupom-desconto/v1/intent.md tela de aplicar cupom no carrinho",
+      "expected_output": "A skill especifica apenas o COMO VISUAL (layout do campo de cupom, estados de validação visual, mensagens). Regras de negócio ausentes (quando o cupom é válido, acúmulo) viram dependência de produto em Pontos em aberto. Mecânica técnica (onde validar, chamada de API, gestão de estado) é deixada para a tech spec.",
+      "files": [],
+      "expectations": [
+        "A skill NÃO pergunta nem decide regra de negócio (validade, acúmulo, percentual do cupom)",
+        "Regra de negócio ausente vira dependência de produto em 'Pontos em aberto', nunca decisão da skill",
+        "A skill NÃO especifica gestão de estado, endpoint de validação nem arquivos de código",
+        "O documento cobre o visual: campo, feedback de cupom válido/inválido (concreto), mensagens literais",
+        "Decisões técnicas detectadas são registradas em 'Deixado para a tech spec'"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "agnostica-de-stack-sem-default-react",
+      "prompt": "/docs/specs/features/painel-relatorios/v1/prd.md",
+      "expected_output": "Projeto web com stack fora do mainstream JS (ex.: Rails + Hotwire com partials ERB e CSS próprio, ou Phoenix LiveView, ou Blazor). A skill descobre a stack real pela ancoragem (manifest de dependências + telas exemplares) e produz o design.md no vocabulário do projeto — partials/componentes da stack real, breakpoints com os nomes das media queries do projeto. NÃO propõe componentes React/shadcn, NÃO usa nomenclatura Tailwind se o projeto não usa Tailwind.",
+      "files": [],
+      "expectations": [
+        "A skill descobre a stack de UI real pelo manifest de dependências e por telas exemplares — nunca assume React/Flutter por default",
+        "Os componentes propostos usam o vocabulário e a convenção da stack real do projeto (ex.: partials ERB, LiveView components, Razor components)",
+        "Os breakpoints da seção 6 usam os nomes/valores reais das media queries do projeto, não a convenção sm/md/lg do Tailwind se o projeto não a usa",
+        "Os padrões de loading/erro propostos imitam o que as telas existentes do projeto já fazem (exemplares lidos na ancoragem)",
+        "Nenhuma biblioteca de UI nova é proposta sem verificação de que a existente não atende (e, se proposta, marcada como nova com justificativa)"
+      ]
+    }
+  ]
+}

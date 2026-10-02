@@ -1,0 +1,47 @@
+{
+  "skill_name": "agent-spec-adr-create",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Preciso criar uma ADR para documentar a decisão de usar JWT armazenado em cookies httpOnly para autenticação em todo o projeto. A decisão é transversal — se aplica a todas as features que precisam de autenticação. Reverter exigiria refatorar todos os serviços que emitem e validam tokens. Contexto: o projeto tem múltiplos serviços que precisam validar identidade do usuário; cookies httpOnly foram escolhidos por segurança (XSS protection) em vez de localStorage. Decisão: adotamos JWT em cookies httpOnly com refresh token rotation. Consequências positivas: proteção contra XSS, refresh automático transparente. Consequências negativas: complexidade de CORS, necessidade de CSRF token em formulários. Alternativa descartada: localStorage — rejeitada por vulnerabilidade a XSS. Tags sugeridas: auth, security. Não há features aplicadas ainda.",
+      "expected_output": "Arquivo ADR criado em docs/adr/ com frontmatter válido (id 4 dígitos, status accepted, tags auth/security, date hoje), todas as seções preenchidas (Context, Decision, Consequences, Alternatives considered, Applied in), comentários HTML removidos, reindex executado e INDEX.md atualizado.",
+      "files": [],
+      "expectations": [
+        "Um arquivo .md foi criado em docs/adr/ com nome no formato NNNN-slug.md",
+        "O frontmatter contém id com 4 dígitos, status: accepted, date no formato YYYY-MM-DD e pelo menos uma tag canônica",
+        "A seção ## Context está preenchida com conteúdo relevante (3-5 linhas sobre o problema)",
+        "A seção ## Decision está preenchida com a decisão no indicativo (1-2 frases)",
+        "A seção ## Consequences contém Pros, Cons e Neutros com bullets",
+        "A seção ## Alternatives considered contém pelo menos uma alternativa com motivo de rejeição",
+        "Nenhum comentário HTML <!-- ... --> está presente no arquivo ADR salvo",
+        "O script reindex.cjs foi executado via Bash e o INDEX.md foi atualizado"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Quero criar uma ADR para documentar como implementamos a paginação infinita na tela de listagem de produtos do nosso e-commerce. Usamos IntersectionObserver para detectar o scroll e carregar mais produtos. É uma decisão específica dessa feature.",
+      "expected_output": "A skill deve RECUSAR criar a ADR pois a decisão é feature-específica (não transversal), explicar o motivo ao usuário e orientá-lo a documentar a decisão no Tech Spec ou Scope da feature de listagem de produtos. Nenhum arquivo ADR deve ser criado.",
+      "files": [],
+      "expectations": [
+        "Nenhum arquivo ADR foi criado em docs/adr/",
+        "A resposta explica que a decisão é feature-específica e não atende ao critério de transversalidade",
+        "A resposta orienta o usuário a documentar a decisão no artefato de feature adequado (Tech Spec, Scope ou similar)",
+        "O reindex NÃO foi executado (pois nenhuma ADR foi criada)"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Crie uma ADR chamada 'Repository + Service Pattern' para este projeto. Contexto: o projeto adota Repository+Service como padrão arquitetural inviolável em todas as features — Repositories isolam acesso a dados (HTTP, banco), Services encapsulam regras de negócio, ambos têm interface + implementação Impl injetados via Container. Decisão: toda feature deve implementar a camada de dados via Repository e a lógica via Service; acesso direto à API ou banco fora de um Repository é proibido. Pros: testabilidade (mock fácil), separação de responsabilidades, consistência entre features. Cons: mais arquivos por feature, curva de aprendizado inicial. Alternativa descartada: acesso direto via fetch/axios nos componentes — rejeitada por acoplamento e dificuldade de teste. Tags: architecture. Applied in: autenticacao-oauth2 (v1) — docs/specs/features/autenticacao-oauth2/v1/tech_spec.md",
+      "expected_output": "Arquivo ADR criado com slug 'repository-service-pattern', título passado via argumento usado sem perguntar novamente, frontmatter correto, todas as seções preenchidas com o conteúdo fornecido, Applied in contendo a entrada de autenticacao-oauth2, reindex executado.",
+      "files": [],
+      "expectations": [
+        "Um arquivo .md foi criado em docs/adr/ com slug contendo 'repository' e 'service' no nome",
+        "O frontmatter contém a tag 'architecture' da lista canônica",
+        "A seção ## Applied in contém a entrada 'autenticacao-oauth2 (v1)'",
+        "A seção ## Alternatives considered contém a alternativa de acesso direto via fetch/axios com motivo de rejeição",
+        "Nenhum comentário HTML <!-- ... --> está presente no arquivo ADR salvo",
+        "O script reindex.cjs foi executado e o INDEX.md foi atualizado"
+      ]
+    }
+  ]
+}

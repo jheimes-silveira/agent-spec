@@ -1,0 +1,70 @@
+{
+  "skill_name": "agent-spec-challenge-spec",
+  "evals": [
+    {
+      "id": 1,
+      "name": "rejeita-artefato-fora-de-escopo",
+      "prompt": "/agent-spec-challenge-spec docs/specs/features/exemplo/v1/prd.md",
+      "expected_output": "Skill deve recusar a invocação imediatamente com mensagem clara, sem ler o arquivo nem fazer perguntas.",
+      "files": [],
+      "expectations": [
+        "A skill NÃO lê o conteúdo do arquivo",
+        "A skill NÃO faz nenhuma pergunta ao usuário via AskUserQuestion",
+        "A resposta menciona explicitamente que agent-spec-challenge-spec opera apenas sobre tech_spec.md (SDD) ou scope.md (miniSpec)",
+        "A resposta NÃO modifica nenhum arquivo no disco"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "detecta-conflito-com-codigo-existente",
+      "prompt": "/agent-spec-challenge-spec docs/specs/features/orders-cancel/v1/tech_spec.md",
+      "expected_output": "Spec propõe POST /orders/{id}/cancel mas já existe POST /orders/{id}/void no código. Skill deve detectar via exploração do código, perguntar UMA vez sobre a colisão com recomendação, atualizar a spec inline se o usuário confirmar reuso, e propor canonização do termo no glossário.",
+      "files": [
+        "docs/specs/features/orders-cancel/v1/tech_spec.md",
+        "handlers/orders.go"
+      ],
+      "expectations": [
+        "A skill detecta o endpoint existente via leitura de código (não apenas pergunta)",
+        "A primeira pergunta menciona o endpoint existente com path e arquivo:linha de referência",
+        "A pergunta inclui uma recomendação explícita (não pergunta aberta)",
+        "Apenas UMA pergunta é feita por vez (não enfileira)",
+        "Se o usuário confirma que são o mesmo conceito, o tech_spec.md é modificado inline para usar /void",
+        "O domain-glossary.md é criado/atualizado com o termo canônico 'Void' e alias rejeitado 'Cancel'",
+        "A sessão é registrada em _run/workflow-report.md"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "decisao-implicita-vira-adr-candidate",
+      "prompt": "/agent-spec-challenge-spec docs/specs/features/event-store/v1/tech_spec.md",
+      "expected_output": "Spec menciona 'usar event sourcing' sem trade-off articulado. Skill detecta decisão implícita, pergunta sobre alternativas, e ao receber alternativa real rejeitada, aplica os 5 critérios. Se TODOS batem, oferece /agent-spec-adr-create.",
+      "files": [
+        "docs/specs/features/event-store/v1/tech_spec.md"
+      ],
+      "expectations": [
+        "A skill identifica 'event sourcing' como decisão implícita não-justificada",
+        "A pergunta força articulação da alternativa rejeitada (ex: CRUD tradicional)",
+        "Após resposta, a skill aplica explicitamente os 5 critérios C1-C5",
+        "Se TODOS batem, a skill oferece /agent-spec-adr-create (mas NÃO cria a ADR diretamente)",
+        "Se 2-4 batem, a skill registra como 'Candidato a ADR parcial' nas Observações com lista dos critérios que falharam",
+        "Se 0-1 batem, a skill NÃO menciona candidatura a ADR"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "scope-minispec-sessao-curta",
+      "prompt": "/agent-spec-challenge-spec docs/specs/features/admin-panel/v1/scope.md",
+      "expected_output": "SCOPE pequeno (3 endpoints, 1 tela). Skill deve rodar sessão proporcionalmente curta (3-7 questões), focando em A/B/C/H/D antes de E/F/G.",
+      "files": [
+        "docs/specs/features/admin-panel/v1/scope.md"
+      ],
+      "expectations": [
+        "A skill usa o checklist challenge-checklist-scope.md (não o de techspec)",
+        "A sessão tem entre 3 e 7 perguntas no total",
+        "As primeiras perguntas vêm das categorias A (terminologia), B (código real), C (ADRs), H (critical paths) ou D (escopo)",
+        "A skill respeita UMA pergunta por vez",
+        "O artefato scope.md é atualizado inline conforme os issues são resolvidos"
+      ]
+    }
+  ]
+}

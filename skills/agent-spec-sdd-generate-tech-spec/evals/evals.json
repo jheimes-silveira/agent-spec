@@ -1,0 +1,140 @@
+{
+  "skill_name": "agent-spec-sdd-generate-tech-spec",
+  "evals": [
+    {
+      "id": 0,
+      "name": "fluxo-completo-aceitando-defaults",
+      "prompt": "Gere o TECH_SPEC para a feature de carrinho-de-compras. O PRD aprovado está em docs/specs/features/carrinho-de-compras/v1/prd.md. Para agilizar, aceite todas as decisões técnicas padrão sem me perguntar — quero ver o documento final completo gerado em uma única passada. Salve o arquivo em docs/specs/features/carrinho-de-compras/v1/tech_spec.md.",
+      "expected_output": "A skill deve gerar um TECH_SPEC completo com TODAS as 16 seções, salvar o arquivo físico em docs/specs/features/carrinho-de-compras/v1/tech_spec.md ANTES de apresentar resumo ao usuário, mapear todas as 9 user stories (US-01..US-09) na seção 5.1, listar arquivos envolvidos na seção 15, delegar a Seção 14 ao subagente agent-spec-qa-test-generator, e NÃO iniciar automaticamente a geração de TASK PLAN.",
+      "files": [
+        "docs/specs/features/carrinho-de-compras/v1/prd.md"
+      ],
+      "assertions": [
+        {
+          "name": "leu-prd-aprovado",
+          "type": "tool_usage",
+          "description": "Deve ler o arquivo PRD do carrinho-de-compras antes de gerar o TECH_SPEC",
+          "check": "A skill usou Read para ler docs/specs/features/carrinho-de-compras/v1/prd.md"
+        },
+        {
+          "name": "arquivo-tech-spec-salvo",
+          "type": "file_exists",
+          "description": "Deve salvar o arquivo físico tech_spec.md no path correto",
+          "check": "Existe arquivo em docs/specs/features/carrinho-de-compras/v1/tech_spec.md"
+        },
+        {
+          "name": "todas-16-secoes",
+          "type": "output_content",
+          "description": "O TECH_SPEC gerado deve conter todas as 16 seções do template",
+          "check": "O documento tech_spec.md contém marcadores das 16 seções do template oficial (Identificação, Resumo Técnico, Arquitetura, Estruturas de Dados, Regras Técnicas, Fluxos Técnicos, APIs/Endpoints, Frontend/Mobile, Banco/Cache, Dependências, Requisitos Não Funcionais, Critérios Técnicos, Riscos, Estratégia de Testes, Arquivos Envolvidos, Checklist Final)"
+        },
+        {
+          "name": "mapeamento-9-user-stories",
+          "type": "output_content",
+          "description": "A seção 5.1 deve mapear TODAS as 9 user stories (US-01 a US-09) do PRD para definições técnicas",
+          "check": "A seção 5.1 do tech_spec.md contém referências a US-01, US-02, US-03, US-04, US-05, US-06, US-07, US-08 e US-09 com as respectivas definições técnicas"
+        },
+        {
+          "name": "delegou-secao-14-qa",
+          "type": "tool_usage",
+          "description": "A seção 14 (Estratégia de Testes) deve ser delegada ao subagente agent-spec-qa-test-generator",
+          "check": "A skill disparou um subagente (Task tool) com subagent_type agent-spec-qa-test-generator (ou similar) para gerar a seção 14"
+        },
+        {
+          "name": "secao-15-arquivos-envolvidos",
+          "type": "output_content",
+          "description": "A seção 15 deve listar arquivos a Criar, Modificar e de Referência",
+          "check": "A seção 15 do tech_spec.md tem 3 subseções (15.1 Arquivos a Criar, 15.2 Arquivos a Modificar, 15.3 Arquivos de Referência) com itens listados"
+        },
+        {
+          "name": "atualizou-sdd-state",
+          "type": "file_content",
+          "description": "Deve atualizar _run/sdd_state.yaml marcando tech_spec como completed",
+          "check": "O arquivo docs/specs/features/carrinho-de-compras/v1/_run/sdd_state.yaml contém current_step: tech_spec e steps.tech_spec.status: completed"
+        },
+        {
+          "name": "nao-iniciou-task-plan",
+          "type": "output_content",
+          "description": "NÃO deve sugerir ou iniciar a próxima etapa (TASK PLAN) automaticamente",
+          "check": "A resposta final do agente NÃO menciona executar /agent-spec-sdd-generate-task-plan, não inicia geração de tasks e apenas pergunta se o SPEC está aprovado"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "name": "respeita-fora-de-escopo",
+      "prompt": "Gere o TECH_SPEC para a feature de carrinho-de-compras. PRD em docs/specs/features/carrinho-de-compras/v1/prd.md. Mas, além do que está no PRD, quero que você inclua também um sistema de cupons de desconto aplicado no carrinho e uma funcionalidade de wishlist para salvar produtos favoritos. Aceite todas as outras decisões técnicas como default e gere o documento completo.",
+      "expected_output": "A skill deve identificar que 'cupons de desconto' e 'wishlist' estão EXPLICITAMENTE fora do escopo do PRD (seção 4.2) e NÃO devem ser adicionados ao TECH_SPEC. A skill deve sinalizar isso ao usuário e ou (a) perguntar se deseja prosseguir apenas com o escopo aprovado, ou (b) sugerir atualizar o PRD primeiro.",
+      "files": [
+        "docs/specs/features/carrinho-de-compras/v1/prd.md"
+      ],
+      "assertions": [
+        {
+          "name": "identificou-cupons-fora-escopo",
+          "type": "output_content",
+          "description": "Deve identificar que cupons de desconto está fora do escopo do PRD",
+          "check": "A resposta do agente menciona explicitamente que 'cupons de desconto' está fora do escopo do PRD (seção 4.2 do PRD lista isso explicitamente como fora do escopo)"
+        },
+        {
+          "name": "identificou-wishlist-fora-escopo",
+          "type": "output_content",
+          "description": "Deve identificar que wishlist está fora do escopo do PRD",
+          "check": "A resposta do agente menciona explicitamente que 'wishlist' / 'lista de desejos' está fora do escopo do PRD (seção 4.2 do PRD lista isso explicitamente como fora do escopo)"
+        },
+        {
+          "name": "nao-incluiu-cupons-no-spec",
+          "type": "output_content",
+          "description": "NÃO deve adicionar funcionalidade de cupons ao TECH_SPEC sem aprovação explícita",
+          "check": "Caso o tech_spec.md tenha sido gerado, ele NÃO contém endpoints, structs, regras ou tabelas relacionadas a cupons de desconto"
+        },
+        {
+          "name": "nao-incluiu-wishlist-no-spec",
+          "type": "output_content",
+          "description": "NÃO deve adicionar funcionalidade de wishlist ao TECH_SPEC sem aprovação explícita",
+          "check": "Caso o tech_spec.md tenha sido gerado, ele NÃO contém endpoints, structs, regras ou tabelas relacionadas a wishlist/lista de desejos"
+        },
+        {
+          "name": "sugeriu-atualizar-prd-ou-perguntou",
+          "type": "output_content",
+          "description": "Deve sugerir atualizar o PRD ou perguntar como proceder com itens fora do escopo",
+          "check": "A resposta do agente sugere atualizar o PRD primeiro, ou pergunta ao usuário como deseja proceder com os itens fora do escopo"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "rastreabilidade-ca-para-ct",
+      "prompt": "Gere o TECH_SPEC completo para o carrinho-de-compras. PRD em docs/specs/features/carrinho-de-compras/v1/prd.md. Aceite todas as decisões técnicas padrão sem perguntar — quero o documento final salvo. Garanta que TODOS os critérios de aceite (CA-01 até CA-13) tenham casos de teste correspondentes na seção 14 com rastreabilidade completa.",
+      "expected_output": "A skill deve gerar o TECH_SPEC completo, delegar a seção 14 ao agent-spec-qa-test-generator, e produzir uma tabela de rastreabilidade CA→CT na seção 14 cobrindo TODOS os 13 critérios de aceite (CA-01 a CA-13). Cada CA deve ter ao menos 1 CT associado. A regra de deduplicação (cada CT em no máximo 1 task) deve ser respeitada.",
+      "files": [
+        "docs/specs/features/carrinho-de-compras/v1/prd.md"
+      ],
+      "assertions": [
+        {
+          "name": "secao-14-tem-rastreabilidade",
+          "type": "output_content",
+          "description": "A seção 14 deve conter uma tabela ou estrutura de rastreabilidade CA→CT",
+          "check": "A seção 14 do tech_spec.md contém uma tabela ou listagem mapeando cada CA-XX do PRD para os CTs correspondentes"
+        },
+        {
+          "name": "cobertura-todos-13-cas",
+          "type": "output_content",
+          "description": "Todos os 13 critérios de aceite (CA-01 até CA-13) devem ter pelo menos 1 caso de teste",
+          "check": "A rastreabilidade da seção 14 cobre CA-01, CA-02, CA-03, CA-04, CA-05, CA-06, CA-07, CA-08, CA-09, CA-10, CA-11, CA-12 e CA-13 (todos com pelo menos 1 CT mapeado)"
+        },
+        {
+          "name": "tres-niveis-de-teste",
+          "type": "output_content",
+          "description": "A seção 14 deve cobrir testes Unit, Integration e E2E (ou justificar ausência)",
+          "check": "A seção 14 contém ou referencia subseções 14.1 Unit Tests, 14.2 Integration Tests, 14.3 E2E Tests, 14.4 (cobertura/edge cases)"
+        },
+        {
+          "name": "delegou-ao-qa-generator",
+          "type": "tool_usage",
+          "description": "A seção 14 deve ter sido produzida via delegação ao subagente agent-spec-qa-test-generator",
+          "check": "A skill disparou Task tool com subagent_type agent-spec-qa-test-generator durante a execução"
+        }
+      ]
+    }
+  ]
+}

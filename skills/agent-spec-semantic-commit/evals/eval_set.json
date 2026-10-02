@@ -1,0 +1,94 @@
+[
+  {
+    "query": "acabei de corrigir um bug no handler de autenticação onde o token JWT não estava sendo validado quando o header Authorization vinha em lowercase. já tá em stage. o que coloco no commit?",
+    "should_trigger": true
+  },
+  {
+    "query": "fiz umas mudanças no arquivo internal/repository/user.go, adicionei um índice na query de busca por email pra melhorar a performance. commita isso pra mim",
+    "should_trigger": true
+  },
+  {
+    "query": "refatorei o pacote de pagamentos — extraí a lógica de cálculo de juros pra um serviço separado, sem mudar comportamento nenhum. qual seria o commit?",
+    "should_trigger": true
+  },
+  {
+    "query": "adicionei testes unitários pro serviço de pedidos cobrindo os casos de pedido vazio e desconto acima de 100%. como commito isso?",
+    "should_trigger": true
+  },
+  {
+    "query": "olha esse diff e me diz qual mensagem de commit usar:\ndiff --git a/cmd/server/main.go b/cmd/server/main.go\n--- a/cmd/server/main.go\n+++ b/cmd/server/main.go\n@@ -12 +12 @@ import (\n-\t\"log\"\n+\tzap \"go.uber.org/zap\"\n )",
+    "should_trigger": true
+  },
+  {
+    "query": "implementei o endpoint POST /v1/webhooks que recebe eventos do stripe e salva no banco. preciso registrar isso no git, qual a mensagem certa?",
+    "should_trigger": true
+  },
+  {
+    "query": "renomei todos os arquivos do pacote utils/ pra helpers/, atualizei os imports em 12 arquivos. nenhuma lógica mudou. qual tipo de commit uso aqui, feat ou refactor?",
+    "should_trigger": true
+  },
+  {
+    "query": "atualizei o README com instruções de setup do ambiente local e adicionei a seção de variáveis de ambiente. gera o commit pra mim",
+    "should_trigger": true
+  },
+  {
+    "query": "meu PR tem mudanças em três arquivos: corrigi um nil pointer em order_service.go, atualizei o go.sum e formatei dois arquivos com gofmt. como divido isso em commits?",
+    "should_trigger": true
+  },
+  {
+    "query": "removi o campo deprecated `user_cpf` do response do endpoint /users/:id, os clientes já migraram pra `document`. é breaking change, como faço o commit certinho?",
+    "should_trigger": true
+  },
+  {
+    "query": "como configuro o commitlint no projeto pra validar automaticamente as mensagens antes do push?",
+    "should_trigger": false
+  },
+  {
+    "query": "preciso fazer um git rebase interativo nos últimos 5 commits pra squashar eles antes de abrir o PR. como faço isso?",
+    "should_trigger": false
+  },
+  {
+    "query": "gera o CHANGELOG da v2.3.0 baseado nos commits desde a v2.2.0",
+    "should_trigger": false
+  },
+  {
+    "query": "revisa meu PR antes de mergear, quero saber se tem algum problema de arquitetura no handler de checkout",
+    "should_trigger": false
+  },
+  {
+    "query": "configura o husky pra rodar os testes antes de cada commit no CI",
+    "should_trigger": false
+  },
+  {
+    "query": "escreve a descrição do PR pra essas mudanças no módulo de autenticação",
+    "should_trigger": false
+  },
+  {
+    "query": "como vejo o histórico de commits de um arquivo específico no git? quero saber quem mexeu no order_service.go",
+    "should_trigger": false
+  },
+  {
+    "query": "gera as release notes da versão 3.0.0 pra publicar no GitHub Releases",
+    "should_trigger": false
+  },
+  {
+    "query": "quero configurar o GitHub Actions pra fazer deploy automático quando um commit cair na branch main",
+    "should_trigger": false
+  },
+  {
+    "query": "como faço pra desfazer o último commit sem perder as mudanças no working tree?",
+    "should_trigger": false
+  },
+  {
+    "query": "qual a diferença entre feat e fix no conventional commits? quando uso um ou outro?",
+    "should_trigger": false
+  },
+  {
+    "query": "olha essa mensagem de commit que escrevi: 'fix: corrigindo bug no login' — tá seguindo o padrão certinho?",
+    "should_trigger": false
+  },
+  {
+    "query": "tenho 8 commits no meu branch de feature antes de abrir o PR, como faço pra squashar tudo num commit só com uma mensagem limpa?",
+    "should_trigger": false
+  }
+]

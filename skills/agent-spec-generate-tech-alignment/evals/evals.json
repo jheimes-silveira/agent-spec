@@ -1,0 +1,111 @@
+{
+  "skill_name": "agent-spec-generate-tech-alignment",
+  "evals": [
+    {
+      "id": 1,
+      "name": "sem-descricao-tecnica-propoe-do-zero",
+      "prompt": "/docs/specs/features/cardapio-digital/v1/prd.md",
+      "expected_output": "Apenas o PRD foi passado (sem descrição técnica). A skill deve detectar SDD, ancorar no projeto (stack/ADRs), e na Fase 1 gerar LIVREMENTE — a partir do PRD + ancoragem — os pontos técnicos onde há solução a propor, já apresentando a direção recomendada por ponto. Sem template, sem cota fixa. NÃO deve apenas reescrever — deve PROPOR caminhos do zero.",
+      "files": [],
+      "expectations": [
+        "A skill detecta o framework SDD pelo nome prd.md",
+        "A skill funciona mesmo SEM o 2º argumento (descrição técnica é opcional)",
+        "A Fase 1 gera os pontos a partir do PRD + ancoragem, SEM template e SEM cota fixa de 3-5 (tantos quanto a feature forçar)",
+        "Cada ponto vem acompanhado da direção que a skill RECOMENDA (propositivo, não questionário)",
+        "Os pontos são decisões arquiteturais ortogonais (ex.: persistência, sincronismo, auth, contrato), nunca de negócio nem de implementação",
+        "A skill faz UM checkpoint propositivo (pode aprofundar nesses termos? falta algum ponto técnico?) e não avança sozinha para a Fase 2",
+        "A skill NÃO desenha endpoints, schemas, tabelas ou nomes de arquivo",
+        "A skill NÃO inicia automaticamente o TECH_SPEC"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "fase2-solucao-recomendada-com-alternativas",
+      "prompt": "/docs/specs/features/sync-impressoras/v1/intent.md preciso de um cache local das impressoras pareadas para funcionar offline",
+      "expected_output": "miniSpec detectado. A descrição técnica (arg2) entra como UMA das alternativas, não a única. Na Fase 2, para o ponto 'persistência do cache local', a skill LIDERA com a solução recomendada e mostra 2-3 caminhos viáveis ancorados no stack, cada um com exemplo e trade-off.",
+      "files": [],
+      "expectations": [
+        "A skill detecta miniSpec pelo nome intent.md",
+        "A descrição técnica do usuário é tratada como uma alternativa candidata, não como a única solução",
+        "A skill LIDERA com a solução recomendada antes de listar alternativas (propositivo, não 'o que você prefere?')",
+        "Para o ponto de persistência, apresenta 2-3 caminhos viáveis (ex.: SQLite, in-memory com TTL, reuso de store existente)",
+        "Cada alternativa tem exemplo concreto + prós/contras + nota de viabilidade ancorada no projeto",
+        "A skill se mantém em alto nível (sem DDL de tabela, sem nomes de coluna)"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "registro-de-decisoes-e-fronteira-adr",
+      "prompt": "/docs/specs/features/auth-oauth2/v1/prd.md quero padronizar autenticação via OAuth2 com tokens JWT para toda a plataforma",
+      "expected_output": "Após convergir, a skill salva o tech-alignment.md (documento LIVRE, sem template) com as soluções registradas (escolhida + rejeitadas + justificativa + trade-off). Como a decisão de auth é transversal/evergreen, marca como candidata a ADR e recomenda /agent-spec-adr-create — sem criar a ADR diretamente.",
+      "files": [],
+      "expectations": [
+        "A skill salva um arquivo tech-alignment.md no path resolvido via tech_alignment.path",
+        "O arquivo é escrito de forma livre (sem preencher um template rígido) mas contém o mínimo: metadados, contexto técnico, soluções decididas, candidatas a ADR, restrições e pontos em aberto",
+        "Cada solução registrada traz alternativas avaliadas + decisão + rejeitadas + trade-off aceito (ou marcada como decisão direta)",
+        "A decisão de auth transversal é marcada como candidata a ADR",
+        "A skill recomenda /agent-spec-adr-create para a decisão transversal e NÃO cria a ADR diretamente",
+        "A skill consulta ADRs ativas (docs/adr/INDEX.md) durante a ancoragem",
+        "A skill NÃO inicia automaticamente o TECH_SPEC nem sugere o próximo comando do framework (exceto /agent-spec-adr-create)",
+        "O arquivo se mantém em alto nível (sem endpoints, sem schema de token, sem nomes de tabela)"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "conflito-com-stack-vira-ponto-de-discussao",
+      "prompt": "/docs/specs/features/relatorios/v1/intent.md vou usar MongoDB para guardar os relatórios",
+      "expected_output": "Se o projeto já usa um banco relacional/Redis e não tem Mongo, a skill NÃO descarta nem aceita cegamente — transforma em ponto de decisão TÉCNICA e apresenta alternativas (seguir o padrão existente vs. introduzir Mongo) com trade-offs e marca a tecnologia nova como hipótese a validar.",
+      "files": [],
+      "expectations": [
+        "A skill faz a ancoragem no projeto antes de propor (lê CLAUDE.md/rules e detecta a persistência atual)",
+        "Ao detectar que MongoDB não faz parte do stack, a skill levanta o conflito como ponto de decisão técnica (não aceita cegamente nem descarta)",
+        "A skill apresenta a alternativa de reusar a persistência existente com trade-offs frente ao Mongo",
+        "A introdução de tecnologia nova (Mongo) é marcada como [HIPÓTESE] / requer validação",
+        "A skill mantém a proposta em alto nível, sem desenhar coleções/índices/schema"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "feature-sem-decisao-aberta-nao-inventa-pontos",
+      "prompt": "/docs/specs/features/listar-categorias/v1/prd.md endpoint simples de listagem seguindo o mesmo padrão dos outros CRUDs do projeto",
+      "expected_output": "Feature trivial que segue um padrão já existente, sem escolha de arquitetura aberta. A skill NÃO deve inventar 3-5 pontos para preencher cota nem disfarçar perguntas de negócio. Deve declarar que não há decisão arquitetural aberta, registrar as restrições/padrões herdados, e salvar um tech-alignment enxuto.",
+      "files": [],
+      "expectations": [
+        "A skill ancora no projeto e percebe que a feature segue um padrão existente sem escolha aberta",
+        "A skill declara explicitamente que não há decisões arquiteturais abertas (zero pontos é resposta válida)",
+        "A skill NÃO inventa pontos artificiais nem transforma o checkpoint em questionário de negócio",
+        "A skill registra as restrições/padrões herdados que a implementação deve seguir",
+        "A skill salva um tech-alignment.md enxuto (documento livre, sem template) e não inicia o TECH_SPEC"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "nao-reabre-decisao-de-negocio",
+      "prompt": "/docs/specs/features/cupom-desconto/v1/intent.md aplicar cupom de desconto no carrinho",
+      "expected_output": "O QUE/POR QUE (regras de quando o cupom é válido, percentual, acúmulo) são decisões de PRODUTO — já fechadas no Intent/pre-refinement. A skill deve propor APENAS o COMO técnico (ex.: onde validar o cupom, consistência do cálculo, fonte de verdade do desconto) e tratar qualquer regra de negócio ausente como dependência de produto em 'Pontos em aberto' — nunca decidir por conta.",
+      "files": [],
+      "expectations": [
+        "A skill propõe soluções técnicas (validação/consistência/fonte de verdade do cálculo), não regras de negócio",
+        "A skill NÃO pergunta nem decide regra de negócio (percentual, regras de acúmulo, elegibilidade)",
+        "Regra de negócio ausente na definição é registrada como dependência de produto em 'Pontos em aberto', não decidida",
+        "O checkpoint da Fase 3.1 é técnico e propositivo, sem perguntas de produto",
+        "A skill se mantém em alto nível, sem endpoints/schema do cupom"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "prioriza-reuso-simples-e-no-escopo",
+      "prompt": "/docs/specs/features/notificacoes-email/v1/prd.md acho que a gente devia trocar o provider de fila e já reescrever o módulo de templates de email pra usar um motor novo",
+      "expected_output": "O projeto já tem fila e um módulo de templates funcionando. A skill deve ancorar no codebase, PRIORIZAR o reuso do que existe, e recomendar a solução mais simples que entrega o que a feature pede — sem aceitar a troca de provider nem a reescrita do módulo (fora do escopo / mirabolante). A vontade de reescrever vira observação em 'Pontos em aberto', não proposta.",
+      "files": [],
+      "expectations": [
+        "A skill ancora no codebase e identifica a fila e o módulo de templates já existentes",
+        "A recomendação prioriza reusar a infra/módulos existentes em vez de introduzir tecnologia nova",
+        "A skill NÃO recomenda trocar o provider de fila nem reescrever o módulo de templates (fora do escopo da feature)",
+        "Tecnologia/abstração nova, se mencionada, é marcada como [HIPÓTESE] e justificada por incompatibilidade do existente",
+        "A vontade de reescrever/refatorar fora do escopo é registrada em 'Pontos em aberto' como observação, não como proposta",
+        "A solução proposta é a mais simples que resolve (sem over-engineering)"
+      ]
+    }
+  ]
+}

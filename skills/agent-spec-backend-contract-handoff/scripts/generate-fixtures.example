@@ -1,0 +1,257 @@
+# generate-fixtures.example
+#
+# Script conceitual em pseudocódigo. Gera fixtures mínimas para uma operação a
+# partir de schemas, DTOs, contrato formal e/ou testes existentes.
+# NÃO assume linguagem.
+
+# ---------------------------------------------------------------------------
+# ENTRADAS
+# ---------------------------------------------------------------------------
+#
+# args:
+#   --operation ID            (obrigatório) identificador da operação (ex: list-orders)
+#   --source PATH             (repetível) DTO, schema, contrato formal, ou arquivo de teste
+#   --output DIR              diretório de saída (default: ./fixtures/{operation}/)
+#   --format FORMAT           json (default) | yaml | dart | kotlin | swift
+#   --include-scenario NAME   (repetível) sucesso, vazio, validacao, 401, 403, 404, 409, 429, 500
+#   --skip-pii                sanitiza dados PII detectados (default: true)
+
+# ---------------------------------------------------------------------------
+# SAÍDA
+# ---------------------------------------------------------------------------
+#
+# Arquivos em <output>/:
+#   success.json
+#   empty.json                (apenas para listagens)
+#   validation-error.json
+#   unauthorized.json
+#   forbidden.json
+#   not-found.json
+#   conflict.json
+#   rate-limited.json         (se rate limit identificado)
+#   internal-error.json
+#
+# E retorna no stdout um sumário JSON:
+#
+# {
+#   "operation": "list-orders",
+#   "output_dir": "./fixtures/list-orders/",
+#   "generated": ["success.json", "empty.json", "unauthorized.json"],
+#   "skipped": ["conflict.json (não há semântica de conflito identificada)"],
+#   "warnings": []
+# }
+
+# ---------------------------------------------------------------------------
+# ALGORITMO
+# ---------------------------------------------------------------------------
+
+function main(args):
+    operation = args.operation
+    sources   = args.source
+    output    = args.output or "./fixtures/" + operation + "/"
+    format    = args.format or "json"
+    scenarios = args.include_scenario or DEFAULT_SCENARIOS
+
+    # PASSO 1 — Carregar e classificar fontes
+    schemas    = []
+    formals    = []
+    dtos       = []
+    tests      = []
+    for s in sources:
+        kind = classify_source(s)
+        if kind == "formal_openapi":  formals.push(parse_openapi(s))
+        if kind == "formal_graphql":  formals.push(parse_graphql(s))
+        if kind == "formal_proto":    formals.push(parse_proto(s))
+        if kind == "dto":             dtos.push(parse_dto(s))
+        if kind == "test":            tests.push(parse_test(s))
+
+    # PASSO 2 — Decidir shape base do request/response
+    request_shape  = derive_request_shape(formals, dtos, tests)
+    response_shape = derive_response_shape(formals, dtos, tests)
+
+    if request_shape is null and response_shape is null:
+        emit_error("Sem fontes suficientes para gerar fixtures. Forneça DTOs, contrato formal ou testes.")
+        return 1
+
+    # PASSO 3 — Gerar cada cenário solicitado
+    generated = []
+    skipped   = []
+
+    for scenario in scenarios:
+        fixture = generate_scenario(scenario, request_shape, response_shape, operation, tests)
+        if fixture is null:
+            skipped.push({ "scenario": scenario, "reason": "não aplicável ou sem evidência" })
+            continue
+
+        if args.skip_pii:
+            fixture = sanitize_pii(fixture)
+
+        serialize(fixture, format) → write(output + filename_for(scenario, format))
+        generated.push(filename_for(scenario, format))
+
+    summary = {
+        "operation": operation,
+        "output_dir": output,
+        "generated": generated,
+        "skipped": skipped,
+        "warnings": collect_warnings()
+    }
+    print(summary)
+    return 0
+
+# ---------------------------------------------------------------------------
+# CONSTANTES
+# ---------------------------------------------------------------------------
+
+DEFAULT_SCENARIOS = [
+    "success",
+    "empty",
+    "validation-error",
+    "unauthorized",
+    "forbidden",
+    "not-found",
+    "conflict",
+    "internal-error"
+]
+
+# ---------------------------------------------------------------------------
+# DERIVAÇÃO DE SHAPE
+# ---------------------------------------------------------------------------
+
+function derive_request_shape(formals, dtos, tests):
+    # Prioridade: formal > dto > teste.
+    if not_empty(formals):
+        for f in formals:
+            shape = f.request_schema_for(operation)
+            if shape: return shape
+
+    if not_empty(dtos):
+        return synthesize_from_dto(dto.request)
+
+    if not_empty(tests):
+        return extract_request_from_test(tests)
+
+    return null
+
+function derive_response_shape(formals, dtos, tests):
+    # Mesma lógica.
+    ...
+
+# ---------------------------------------------------------------------------
+# GERAÇÃO POR CENÁRIO
+# ---------------------------------------------------------------------------
+
+function generate_scenario(scenario, req_shape, resp_shape, operation, tests):
+    match scenario:
+        case "success":
+            return {
+                "name": operation + "/success",
+                "request": fill_request(req_shape, "happy_path"),
+                "response": {
+                    "status": 200_or_201_for(operation),
+                    "body": fill_response(resp_shape, "happy_path")
+                }
+            }
+
+        case "empty":
+            if not is_list_endpoint(resp_shape): return null
+            return {
+                "name": operation + "/empty",
+                "request": fill_request(req_shape, "happy_path"),
+                "response": { "status": 200, "body": empty_list_envelope(resp_shape) }
+            }
+
+        case "validation-error":
+            if not has_validation(req_shape): return null
+            return {
+                "name": operation + "/validation-error",
+                "request": fill_request(req_shape, "broken"),
+                "response": {
+                    "status": 400,
+                    "body": { "error": "validation_error", "errors": derive_field_errors(req_shape) }
+                }
+            }
+
+        case "unauthorized":
+            return {
+                "name": operation + "/unauthorized",
+                "request": fill_request(req_shape, "happy_path", no_auth=true),
+                "response": { "status": 401, "body": { "error": "unauthenticated" } }
+            }
+
+        case "forbidden":
+            return {
+                "name": operation + "/forbidden",
+                "request": fill_request(req_shape, "happy_path", wrong_role=true),
+                "response": { "status": 403, "body": { "error": "forbidden" } }
+            }
+
+        case "not-found":
+            if not has_path_param(req_shape): return null
+            return {
+                "name": operation + "/not-found",
+                "request": fill_request(req_shape, "happy_path", id="missing"),
+                "response": { "status": 404, "body": { "error": "not_found" } }
+            }
+
+        case "conflict":
+            if not has_state_transition(operation): return null
+            return {
+                "name": operation + "/conflict",
+                "response": { "status": 409, "body": { "error": "conflict", "current_state": "..." } }
+            }
+
+        case "rate-limited":
+            return {
+                "name": operation + "/rate-limited",
+                "response": {
+                    "status": 429,
+                    "headers": { "Retry-After": 30 },
+                    "body": { "error": "rate_limited", "retry_after": 30 }
+                }
+            }
+
+        case "internal-error":
+            return {
+                "name": operation + "/internal-error",
+                "response": { "status": 500, "body": { "error": "internal_error", "trace_id": "trc_test_001" } }
+            }
+
+# ---------------------------------------------------------------------------
+# FILL — preenchimento determinístico
+# ---------------------------------------------------------------------------
+
+function fill_response(shape, mode):
+    # Regra: valores determinísticos por tipo.
+    #   string  → "test_value" ou variação contextual ("ord_test_001")
+    #   integer → 1, 2, 3 ...
+    #   number  → 1.0
+    #   boolean → true
+    #   date    → "2024-01-01"
+    #   datetime→ "2024-01-01T00:00:00Z"
+    #   uuid    → "00000000-0000-0000-0000-000000000001"
+    #   email   → "test@example.com"
+    #   enum    → primeiro valor declarado
+    ...
+
+# ---------------------------------------------------------------------------
+# SANITIZAÇÃO PII
+# ---------------------------------------------------------------------------
+
+function sanitize_pii(fixture):
+    # Heurística: campos com nomes sensíveis recebem placeholder fixo.
+    SENSITIVE_FIELDS = {"cpf", "cnpj", "ssn", "email", "phone", "phone_number", "rg", "birthdate", "password", "token", "secret"}
+    for path, value in walk(fixture):
+        field_name = leaf(path).lower()
+        if field_name in SENSITIVE_FIELDS:
+            fixture[path] = placeholder_for(field_name)
+    return fixture
+
+# ---------------------------------------------------------------------------
+# OBSERVAÇÕES PARA O AGENTE
+# ---------------------------------------------------------------------------
+#
+# - Fixtures geradas são RASCUNHO. Validar com o backend antes de adotar.
+# - Cenários impossíveis (ex: 409 em GET) são pulados, não inventados.
+# - Quando o shape não pode ser derivado, retornar erro (não gerar fixture vazia).
+# - PII sanitização é defesa em profundidade — fontes nunca devem trazer PII real.

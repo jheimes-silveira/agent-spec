@@ -1,0 +1,217 @@
+# validate-handoff.example
+#
+# Script conceitual em pseudocódigo. Valida que um handoff-frontend.md atende
+# os critérios mínimos da skill `backend-contract-handoff`. NÃO valida
+# correção semântica — só completude estrutural.
+#
+# Use em pre-commit, CI ou na FASE 8 da skill.
+
+# ---------------------------------------------------------------------------
+# ENTRADAS
+# ---------------------------------------------------------------------------
+#
+# args:
+#   --handoff PATH        (obrigatório) caminho para o handoff-frontend.md
+#   --formal PATH         (opcional) contrato formal (OpenAPI/GraphQL/protobuf) para drift check
+#   --strict              eleva warnings a erros (CI mode)
+#   --json                output em JSON em vez de texto
+
+# ---------------------------------------------------------------------------
+# SAÍDA
+# ---------------------------------------------------------------------------
+#
+# Exit code:
+#   0  → handoff válido
+#   1  → erros encontrados
+#   2  → warnings em modo --strict
+#
+# Output (texto ou JSON):
+# {
+#   "handoff": "docs/specs/features/orders/v1/handoff-frontend.md",
+#   "errors": [
+#     { "section": "4.2 Cancelar pedido", "code": "MISSING_AUTH", "message": "campo Auth ausente" }
+#   ],
+#   "warnings": [
+#     { "section": "11", "code": "EMPTY_OPEN_QUESTIONS", "message": "Open Questions vazio, mas há [DÚVIDA] inline" }
+#   ],
+#   "operations_count": 3,
+#   "duvidas_count": 2,
+#   "hipoteses_count": 1
+# }
+
+# ---------------------------------------------------------------------------
+# ALGORITMO
+# ---------------------------------------------------------------------------
+
+function main(args):
+    handoff = read(args.handoff)
+    sections = parse_markdown_sections(handoff)
+
+    errors = []
+    warnings = []
+
+    # ============================================================
+    # ESTRUTURA OBRIGATÓRIA
+    # ============================================================
+    REQUIRED_SECTIONS = [
+        "Feature",
+        "Scope",
+        "Backend Entry Points",
+        "Contracts",
+        "UI States Required",
+        "Error Mapping",
+        "Fixtures",
+        "Frontend Implementation Notes",
+        "Acceptance Criteria",
+        "Open Questions"
+    ]
+
+    for sec in REQUIRED_SECTIONS:
+        if not has_section(sections, sec):
+            errors.push({ "section": sec, "code": "MISSING_SECTION", "message": "seção ausente" })
+
+    # ============================================================
+    # CONTRATOS — pelo menos um
+    # ============================================================
+    contracts = subsections_under(sections, "Contracts")
+    if length(contracts) == 0:
+        errors.push({ "section": "Contracts", "code": "NO_CONTRACT", "message": "nenhum contrato declarado" })
+
+    # ============================================================
+    # CAMPOS POR CONTRATO
+    # ============================================================
+    REQUIRED_CONTRACT_FIELDS = [
+        "Tipo",
+        "Método/Ação",
+        "Path/Operação",
+        "Auth",
+        "Permissões",
+        "Idempotência",
+        "Cache",
+        "Request",
+        "Response",
+        "Erros possíveis",
+        "Side effects"
+    ]
+
+    for contract in contracts:
+        for field in REQUIRED_CONTRACT_FIELDS:
+            if not has_field(contract, field):
+                errors.push({
+                    "section": contract.title,
+                    "code": "MISSING_FIELD",
+                    "message": "campo '" + field + "' ausente"
+                })
+
+        # Auth nunca pode ser literalmente vazio (deve declarar "nenhuma" se for público)
+        if value_of(contract, "Auth") is empty:
+            errors.push({ "section": contract.title, "code": "EMPTY_AUTH", "message": "Auth vazio — declare 'nenhuma' se for público" })
+
+        # Permissões idem
+        if value_of(contract, "Permissões") is empty:
+            errors.push({ "section": contract.title, "code": "EMPTY_PERMISSIONS", "message": "Permissões vazio — declare 'pública' se aplicável" })
+
+        # Erros: pelo menos 1 entry na tabela
+        if rows_in_table(contract, "Erros possíveis") < 1:
+            warnings.push({ "section": contract.title, "code": "NO_ERRORS_LISTED", "message": "tabela de erros vazia — confirme se a operação realmente nunca falha" })
+
+    # ============================================================
+    # ERROR MAPPING — cada operação referenciada
+    # ============================================================
+    em_rows = rows_in_table(sections, "Error Mapping")
+    operations_in_em = unique(em_rows.column("Operação"))
+    operations_in_contracts = [c.title for c in contracts]
+
+    for op in operations_in_contracts:
+        if op not in operations_in_em:
+            warnings.push({ "section": "Error Mapping", "code": "OP_NOT_MAPPED", "message": "operação '" + op + "' sem entrada em Error Mapping" })
+
+    # ============================================================
+    # FIXTURES — pelo menos uma fixture exemplar embutida
+    # ============================================================
+    if count_code_blocks(sections["Fixtures"], lang="json") == 0:
+        warnings.push({ "section": "Fixtures", "code": "NO_INLINE_FIXTURE", "message": "nenhum exemplo de fixture embutido" })
+
+    # Pelo menos uma fixture mencionada por nome (success / empty / validation-error / etc.)
+    if not contains_any(sections["Fixtures"], ["success", "validation-error", "unauthorized"]):
+        warnings.push({ "section": "Fixtures", "code": "NO_FIXTURE_PATHS", "message": "nenhum path de fixture nomeado" })
+
+    # ============================================================
+    # ACCEPTANCE CRITERIA — checklist real
+    # ============================================================
+    ac_items = checklist_items(sections, "Acceptance Criteria")
+    if length(ac_items) < 3:
+        warnings.push({ "section": "Acceptance Criteria", "code": "TOO_FEW_CRITERIA", "message": "menos de 3 critérios — confirme suficiência" })
+
+    # ============================================================
+    # OPEN QUESTIONS coerente com [DÚVIDA]/[HIPÓTESE] inline
+    # ============================================================
+    duvidas_inline   = count_occurrences(handoff, "[DÚVIDA]")
+    hipoteses_inline = count_occurrences(handoff, "[HIPÓTESE]")
+    oq_items         = checklist_items(sections, "Open Questions")
+
+    if duvidas_inline > 0 and length(oq_items) == 0:
+        errors.push({ "section": "Open Questions", "code": "DUVIDAS_NAO_LISTADAS", "message": "há [DÚVIDA] inline mas Open Questions está vazio" })
+
+    # ============================================================
+    # AUDITABILIDADE — fontes rastreáveis
+    # ============================================================
+    source_comments = count_occurrences(handoff, "<!-- fonte:")
+    if source_comments < length(contracts):
+        warnings.push({ "section": "global", "code": "FEW_SOURCE_REFS", "message": "menos comentários de fonte que contratos — auditabilidade fraca" })
+
+    # ============================================================
+    # DRIFT (opcional) — comparar com contrato formal
+    # ============================================================
+    if args.formal is not null:
+        formal_ops = parse_formal_contract(args.formal)
+        for f_op in formal_ops:
+            if not declared_in_handoff(handoff, f_op):
+                warnings.push({
+                    "section": "Backend Entry Points",
+                    "code": "FORMAL_NOT_IN_HANDOFF",
+                    "message": "operação '" + f_op.id + "' existe no contrato formal mas não no handoff"
+                })
+
+    # ============================================================
+    # CONCISÃO — alvo de tamanho
+    # ============================================================
+    pages_estimate = bytes(handoff) / 3000  # heurística aproximada
+    if pages_estimate > 3 * length(contracts):
+        warnings.push({
+            "section": "global",
+            "code": "TOO_LONG",
+            "message": "handoff muito longo para " + length(contracts) + " operações (>3 páginas/operação)"
+        })
+
+    # ============================================================
+    # OUTPUT
+    # ============================================================
+    summary = {
+        "handoff": args.handoff,
+        "errors": errors,
+        "warnings": warnings,
+        "operations_count": length(contracts),
+        "duvidas_count": duvidas_inline,
+        "hipoteses_count": hipoteses_inline
+    }
+
+    if args.json:
+        print_json(summary)
+    else:
+        print_human(summary)
+
+    if length(errors) > 0:
+        return 1
+    if args.strict and length(warnings) > 0:
+        return 2
+    return 0
+
+# ---------------------------------------------------------------------------
+# OBSERVAÇÕES PARA O AGENTE
+# ---------------------------------------------------------------------------
+#
+# - Este script valida ESTRUTURA. Não valida correção do contrato em si.
+# - Combine com `discover-contracts` para detectar operações faltando.
+# - Em CI, sugerimos `--strict --json` e parsing do resultado por outro script.
+# - O agente, ao gerar um handoff, deve rodar este check mentalmente antes de gravar.

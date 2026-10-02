@@ -1,0 +1,26 @@
+{
+  "skill_name": "agent-spec-generate-claude-md",
+  "evals": [
+    {
+      "id": 0,
+      "name": "backend-go-greenfield",
+      "prompt": "Este repo é uma API de billing em Go e ainda não tem um CLAUDE.md. Gera um pra configurar o agente de coding direito — quero que ele entenda a stack, os comandos e as convenções do projeto. Os anti-padrões que mais me incomodam aqui: o pessoal às vezes edita os arquivos gerados pelo sqlc à mão, e às vezes faz DELETE físico em vez de soft delete.",
+      "expected_output": "CLAUDE.md de ~50-75 linhas, tratado como contrato. Stack correta (Go 1.22, chi, pgx, sqlc, postgres) extraída de go.mod/sqlc.yaml. Comandos reais do Makefile (make test/lint/build/run). SEM seção de UI/Design. As 5 regras de comportamento presentes. Negativos específicos do projeto: não editar arquivos gerados pelo sqlc, não fazer DELETE físico (soft delete via deleted_at).",
+      "files": ["fixtures/repo-backend-go"]
+    },
+    {
+      "id": 1,
+      "name": "frontend-react-greenfield",
+      "prompt": "Preciso de um CLAUDE.md pra esse dashboard em React. Configura o agente pra trabalhar nesse projeto seguindo nossos padrões de stack e design.",
+      "expected_output": "CLAUDE.md de ~50-80 linhas. Stack correta (React 18, TypeScript strict, Vite, Vitest, zustand, react-router) extraída de package.json. Gerenciador pnpm (pnpm-lock). Comandos reais (pnpm dev/build/lint/typecheck/test). INCLUI seção UI/Design System traduzida em implementação (ritmo de 8px via tokens, estender Button via variant). Convenção de state (zustand em src/store, não Context para estado de servidor). As 5 regras de comportamento presentes.",
+      "files": ["fixtures/repo-frontend-react"]
+    },
+    {
+      "id": 2,
+      "name": "bloated-claudemd-augment",
+      "prompt": "Esse CLAUDE.md aqui tá enorme e cheio de encheção de linguiça (história da empresa, 'escreva código limpo', agradecimentos). Dá uma enxugada e deixa ele útil de verdade pro agente.",
+      "expected_output": "Diff cirúrgico que CORTA o bloat (sobre empresa, visão, filosofia genérica, agradecimentos, emojis) e FORTALECE com regras objetivas ancoradas no código real: stack Node/Express/knex/zod/pino extraída de package.json, comandos reais (npm test/lint/dev/migrate), pool singleton (não recriar — too many connections), validação zod na entrada, rota nova em src/routes. Resultado ~40-70 linhas. As 5 regras de comportamento presentes. NÃO uma reescrita que joga fora tudo — preserva o que era factual.",
+      "files": ["fixtures/repo-bloated-claudemd"]
+    }
+  ]
+}

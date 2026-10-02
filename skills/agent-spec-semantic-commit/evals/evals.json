@@ -1,0 +1,48 @@
+{
+  "skill_name": "agent-spec-semantic-commit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "acabei de adicionar um novo handler HTTP no arquivo internal/handler/product.go que responde GET /products/:id retornando um produto por ID, com tratamento de erro 404 quando não encontrado. já tá em stage. gera o commit semântico pra mim",
+      "expected_output": "Mensagem de commit do tipo feat com escopo handler ou product, descrição em imperativo pt-BR na linha de assunto (ex: 'feat(handler): adiciona endpoint GET /products/:id'), sem ponto final, dentro de 72 chars. A skill deve rodar git diff --staged ou confirmar com o usuário antes de gerar.",
+      "files": [],
+      "expectations": [
+        "A linha de assunto começa com 'feat'",
+        "A descrição usa verbo no imperativo presente em português (ex: adiciona, implementa)",
+        "A linha de assunto tem no máximo 72 caracteres",
+        "A linha de assunto não termina com ponto final",
+        "A linha de assunto está em letras minúsculas",
+        "A skill propõe executar o commit ou pede confirmação ao usuário"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "olha o diff das minhas mudanças e me diz qual seria a mensagem de commit:\n\ndiff --git a/internal/service/order.go b/internal/service/order.go\n--- a/internal/service/order.go\n+++ b/internal/service/order.go\n@@ -45,7 +45,7 @@ func (s *OrderService) TotalPrice(items []Item) float64 {\n-\ttotal := 0\n+\ttotal := 0.0\n \tfor _, item := range items {\n \t\ttotal += item.Price * float64(item.Qty)\n \t}\n \treturn total\n }",
+      "expected_output": "Mensagem de commit do tipo fix com escopo service ou order, descrevendo a correção do tipo da variável total de int para float64 que causava truncamento no cálculo de preço. Verbo imperativo em pt-BR, dentro de 72 chars. A skill não deve classificar como refactor.",
+      "files": [],
+      "expectations": [
+        "A linha de assunto começa com 'fix'",
+        "A descrição usa verbo no imperativo presente em português",
+        "A linha de assunto tem no máximo 72 caracteres",
+        "A skill não classifica como 'refactor' (a mudança corrige um bug de truncamento numérico)",
+        "A linha de assunto não termina com ponto final",
+        "A linha de assunto está em letras minúsculas"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "preciso commitar as mudanças no meu projeto Go. mexi em várias coisas: renomei o pacote `util` para `pkg/stringutil`, movi funções de formatação que estavam espalhadas em 3 arquivos pra esse pacote centralizado, e atualizei todos os imports. não adicionei funcionalidade nova nem corrigi bug, só organizei melhor. como faço o commit disso?",
+      "expected_output": "A skill deve identificar o tipo como refactor (reorganização sem mudança de comportamento), sugerir escopo pkg ou stringutil, e gerar uma mensagem em imperativo pt-BR. Pode mencionar que como o diff toca múltiplos arquivos, é válido omitir o escopo. Não deve classificar como chore nem como feat.",
+      "files": [],
+      "expectations": [
+        "A linha de assunto começa com 'refactor'",
+        "A descrição usa verbo no imperativo presente em português",
+        "A skill não classifica como 'chore' (é reorganização de código, não tarefa de manutenção)",
+        "A skill não classifica como 'feat' (nenhuma funcionalidade nova foi adicionada)",
+        "A linha de assunto tem no máximo 72 caracteres",
+        "A linha de assunto não termina com ponto final",
+        "A skill oferece executar o commit ou ajustar a mensagem"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "skill_name": "agent-spec-design-system-bootstrap",
+  "evals": [
+    {
+      "id": 0,
+      "eval_name": "deriva-do-codebase-e-pergunta-so-o-nao-derivavel",
+      "prompt": "Você é a skill agent-spec-design-system-bootstrap. Projeto Flutter SEM design-system.md. O codebase tem ThemeData central com ColorScheme e escala tipográfica, diretório shared/widgets/ com 8 widgets reutilizáveis, mas o loading diverge (CircularProgressIndicator em 3 telas, skeleton em 1) e não há dark mode nem sinal sobre ele. NÃO peça confirmação — gere: a decomposição dos 5 eixos marcando [derivado]/[a decidir], o questionário SÓ do não-derivável, e o design-system.md final (assumindo respostas razoáveis).",
+      "expected_output": "Eixos 1 (tokens do ThemeData), 2 (widgets de shared/widgets/) e 3 marcados [derivado] — NÃO pergunta cores, tipografia nem inventário de componentes. Eixo 4 (dark mode: sem sinal) e eixo 5 (loading divergente) viram nós [a decidir] com 3 alternativas + recomendação. Gera design-system.md no path de design_system.global.path com coluna Origem ([derivado] com paths, [usuário]), padrões de feedback CONCRETOS, tabela 'Decisões (árvore)' e relatório final. Não cria design.md de feature.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "eval_name": "figma-sem-mcp-nao-bloqueia",
+      "prompt": "Você é a skill agent-spec-design-system-bootstrap. O usuário passou um link de Figma como argumento, mas NÃO há MCP de Figma na sessão nem FIGMA_TOKEN no ambiente. O codebase é React + Tailwind com tailwind.config completo. NÃO peça confirmação — descreva como você trata o link e gere a decomposição dos eixos.",
+      "expected_output": "Tenta MCP → ausente; tenta token → ausente; pede export/descrição manual SEM bloquear e segue com o tailwind.config como fonte [derivado]. O link do Figma é registrado em 'Fontes desta consolidação' mesmo sem ser lido. Nenhuma pergunta sobre o que o tailwind.config já responde (cores, espaçamento, breakpoints).",
+      "files": []
+    },
+    {
+      "id": 2,
+      "eval_name": "enriquecimento-preserva-promocoes-da-generate-design",
+      "prompt": "Você é a skill agent-spec-design-system-bootstrap. O design-system.md já existe: tem tokens de cor coerentes com o código, uma seção de Padrões de Feedback promovida pela agent-spec-generate-design numa feature anterior, e a seção de Tipografia vazia. O código atual revela escala tipográfica no theme. NÃO peça confirmação — mostre o diff e o arquivo enriquecido.",
+      "expected_output": "Modo ENRIQUECIMENTO: Tipografia classificada 'vazio' (preenchida do theme, origem [derivado]); tokens de cor 'coerente' (intocados, sem pergunta); seção promovida pela generate-design tratada como hand-authored (intocada sem confirmação). Diff antes/depois apresentado; NÃO reescreve o arquivo inteiro; acrescenta folhas novas à tabela 'Decisões (árvore)'.",
+      "files": []
+    }
+  ]
+}

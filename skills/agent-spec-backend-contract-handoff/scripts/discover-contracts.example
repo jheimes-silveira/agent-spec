@@ -1,0 +1,235 @@
+# discover-contracts.example
+#
+# Script conceitual em pseudocódigo. Traduz para a stack do projeto antes de usar.
+# Objetivo: produzir uma lista determinística de candidatos a contratos a partir
+# de um diretório de backend e (opcional) um arquivo de contrato formal.
+#
+# NÃO assume linguagem. Implementador adapta para Bash/Python/Node/Go/etc.
+
+# ---------------------------------------------------------------------------
+# ENTRADAS
+# ---------------------------------------------------------------------------
+#
+# args:
+#   --root PATH          (obrigatório) raiz do código backend
+#   --formal PATH        (opcional) caminho para openapi.yaml | schema.graphql | *.proto
+#   --include PATTERN    (repetível) globs adicionais para inspecionar
+#   --exclude PATTERN    (repetível) globs para ignorar (vendor/, node_modules/, dist/)
+#   --output PATH        (opcional) arquivo JSON de saída (default: stdout)
+
+# ---------------------------------------------------------------------------
+# SAÍDA
+# ---------------------------------------------------------------------------
+#
+# JSON com a forma:
+#
+# {
+#   "discovered_at": "2024-01-01T00:00:00Z",
+#   "root": "/abs/path",
+#   "formal_contract": "openapi.yaml" | null,
+#   "operations": [
+#     {
+#       "id": "list-orders",
+#       "transport": "rest" | "graphql" | "rpc" | "event" | "local_sdk",
+#       "method_or_action": "GET",
+#       "path_or_name": "/api/v1/orders",
+#       "evidence": {
+#         "route_file": "src/routes.go:120",
+#         "handler_file": "src/handlers/orders.go:42",
+#         "dto_request": "src/dto/list_orders_request.go",
+#         "dto_response": "src/dto/list_orders_response.go",
+#         "validators": ["src/dto/list_orders_request.go (struct tags)"],
+#         "middlewares": ["src/middleware/auth.go", "src/middleware/tenant.go"],
+#         "policies": [],
+#         "tests": ["src/handlers/orders_test.go:30"],
+#         "formal_ref": "openapi.yaml#/paths/~1api~1v1~1orders/get"
+#       },
+#       "warnings": []
+#     }
+#   ],
+#   "unresolved": [
+#     { "file": "src/routes.go:200", "reason": "handler não encontrado", "evidence": "..." }
+#   ]
+# }
+
+# ---------------------------------------------------------------------------
+# ALGORITMO
+# ---------------------------------------------------------------------------
+
+function main(args):
+    root      = args.root
+    formal    = args.formal           # pode ser null
+    includes  = args.include + defaults_for_known_stacks()
+    excludes  = args.exclude + ["**/vendor/**", "**/node_modules/**", "**/dist/**", "**/.git/**"]
+
+    files = glob(root, includes, excludes)
+
+    candidates = []
+
+    # PASSO 1 — Inspeção de fontes formais
+    if formal is not null:
+        candidates += parse_formal_contract(formal)
+
+    # PASSO 2 — Inspeção de roteador / registry
+    candidates += scan_route_definitions(files)
+
+    # PASSO 3 — Inspeção de controllers / handlers / resolvers
+    candidates += scan_handler_files(files)
+
+    # PASSO 4 — Inspeção de GraphQL resolvers
+    candidates += scan_graphql_resolvers(files)
+
+    # PASSO 5 — Inspeção de gRPC / RPC services
+    candidates += scan_rpc_services(files)
+
+    # PASSO 6 — Inspeção de event producers/consumers
+    candidates += scan_event_definitions(files)
+
+    # PASSO 7 — Deduplicar e enriquecer com evidências cruzadas
+    operations = consolidate(candidates)
+
+    # PASSO 8 — Cross-link com DTOs, validators, middlewares
+    operations = link_dtos(operations, files)
+    operations = link_middlewares(operations, files)
+    operations = link_tests(operations, files)
+
+    # PASSO 9 — Detectar drift entre formal e código (se ambos existem)
+    if formal is not null:
+        operations = compare_with_formal(operations, formal)
+
+    # PASSO 10 — Serializar
+    output = serialize(operations, unresolved=collect_unresolved(candidates))
+    write(args.output, output)
+
+# ---------------------------------------------------------------------------
+# DEFAULTS POR STACK CONHECIDA
+# ---------------------------------------------------------------------------
+
+function defaults_for_known_stacks():
+    return [
+        # Go
+        "**/*.go",
+        # Node / TS
+        "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx",
+        # Java / Kotlin
+        "**/*.java", "**/*.kt",
+        # C#
+        "**/*.cs",
+        # Python
+        "**/*.py",
+        # Ruby
+        "**/*.rb",
+        # PHP
+        "**/*.php",
+        # Schemas / contratos
+        "**/*.proto", "**/*.graphql", "**/openapi.{yaml,yml,json}", "**/swagger.{yaml,yml,json}"
+    ]
+
+# ---------------------------------------------------------------------------
+# SCAN DE ROTAS — heurísticas por stack
+# ---------------------------------------------------------------------------
+
+function scan_route_definitions(files):
+    matches = []
+
+    for file in files:
+        content = read(file)
+        for line, idx in lines(content):
+            if matches_any(line, ROUTE_PATTERNS):
+                matches.push({
+                    "file": file,
+                    "line": idx,
+                    "raw": line,
+                    "transport": "rest"
+                })
+    return matches
+
+ROUTE_PATTERNS = [
+    # Go
+    r"r\.(Get|Post|Put|Patch|Delete|Handle)\(",
+    r"router\.(GET|POST|PUT|PATCH|DELETE|Handle)\(",
+    r"http\.HandleFunc\(",
+    # Node / Express / Fastify / Nest
+    r"app\.(get|post|put|patch|delete)\(",
+    r"router\.(get|post|put|patch|delete)\(",
+    r"@(Get|Post|Put|Patch|Delete|RequestMapping)\(",
+    # Spring / Micronaut
+    r"@(GetMapping|PostMapping|PutMapping|DeleteMapping|RequestMapping)",
+    r"@Controller",
+    # Django / FastAPI / Flask
+    r"@app\.(get|post|put|patch|delete)\(",
+    r"@(api_view|action)\(",
+    r"path\(.*,.*views\.",
+    # Rails / Sinatra
+    r"resources :",
+    r"^\s*(get|post|put|patch|delete)\s+['\"]",
+    # Laravel
+    r"Route::(get|post|put|patch|delete)\(",
+    # Minimal APIs .NET
+    r"app\.Map(Get|Post|Put|Patch|Delete)\(",
+]
+
+# ---------------------------------------------------------------------------
+# SCAN DE HANDLER / DTO
+# ---------------------------------------------------------------------------
+
+function scan_handler_files(files):
+    handlers = []
+    for file in files:
+        if matches_path(file, ["**/handler*", "**/controller*", "**/view*", "**/resolver*", "**/endpoint*"]):
+            handlers.push(extract_handler_signature(file))
+    return handlers
+
+# ---------------------------------------------------------------------------
+# CONSOLIDAÇÃO
+# ---------------------------------------------------------------------------
+
+function consolidate(candidates):
+    # Dedup por (transport, method, path).
+    # Quando há match no formal_contract E no código, juntar evidências em uma única operation.
+    map_by_key = {}
+    for c in candidates:
+        key = (c.transport, c.method_or_action, c.path_or_name)
+        if key not in map_by_key:
+            map_by_key[key] = c
+        else:
+            map_by_key[key].evidence = merge_evidence(map_by_key[key].evidence, c.evidence)
+    return list(map_by_key.values())
+
+# ---------------------------------------------------------------------------
+# DRIFT FORMAL ↔ CÓDIGO
+# ---------------------------------------------------------------------------
+
+function compare_with_formal(operations, formal_path):
+    formal_ops = parse_formal_contract(formal_path)
+    formal_keys = set((op.transport, op.method_or_action, op.path_or_name) for op in formal_ops)
+
+    for op in operations:
+        key = (op.transport, op.method_or_action, op.path_or_name)
+        if op.evidence.formal_ref is null and key in formal_keys:
+            op.warnings.push("formal contract divergente: operação existe no formal mas referência não foi capturada")
+        elif op.evidence.formal_ref is not null and key not in formal_keys:
+            op.warnings.push("operação no código sem correspondência no formal contract (drift)")
+
+    # Operações no formal sem correspondência no código
+    code_keys = set((op.transport, op.method_or_action, op.path_or_name) for op in operations)
+    for fop in formal_ops:
+        key = (fop.transport, fop.method_or_action, fop.path_or_name)
+        if key not in code_keys:
+            operations.push({
+                ...fop,
+                warnings: ["declarada no formal mas não encontrada no código"]
+            })
+
+    return operations
+
+# ---------------------------------------------------------------------------
+# OBSERVAÇÕES PARA O AGENTE
+# ---------------------------------------------------------------------------
+#
+# - Este script produz CANDIDATOS, não verdade absoluta. Sempre revise.
+# - Heurísticas baseadas em regex falham em código fora do padrão. Quando falhar,
+#   adicione a stack ao ROUTE_PATTERNS e re-rode.
+# - O agente que consome o JSON pode complementar com leitura semântica dos
+#   arquivos apontados em `evidence`.
+# - `warnings` é input para a seção `Open Questions` do handoff.

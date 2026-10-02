@@ -1,0 +1,19 @@
+{
+  "skill_name": "agent-spec-rule-create",
+  "evals": [
+    {
+      "id": 0,
+      "eval_name": "greenfield-decompoe-e-rule-enxuta",
+      "prompt": "Você é a skill agent-spec-rule-create. Considere um projeto greenfield (ainda sem código do tema) cuja stack é TypeScript/Node. Tema: \"injeção de dependência\". NÃO peça confirmação humana e NÃO invoque outras skills — gere direto: (1) a decomposição em 3-5 eixos inferidos do tema; (2) para cada eixo, exatamente 3 alternativas A/B/C com recomendação; (3) a rule semente enxuta (provisória) com nome e path match propostos; (4) o material de ADR.",
+      "expected_output": "Decomposição em 3-5 eixos inferidos do tema (ex.: mecanismo, lifetime/escopo, composition root, substituição em teste, fronteira injetável); cada nó com EXATAMENTE 3 alternativas + recomendação. Rule ENXUTA: convenções operacionais em 1 linha, marcada provisória, com nome derivado do tema; o racional/alternativas NÃO ficam no corpo da rule. RECONHECE DI como rule de PRODUÇÃO (o mecanismo é decidido já na tech-spec/scope) → o matcher cobre os paths de código MAIS os de geração (skills geradoras/artefatos, p.ex. '.claude/skills/agent-spec-*generate*/**', 'docs/specs/**'), não apenas um glob de código que sumiria na geração; nunca usa '**' (se fosse transversal, declararia global). Material de ADR separado com 'Alternatives considered'. NÃO invoca curate/adr-create — apenas recomenda rodá-las. Exemplos plurais, sem pressupor uma única stack.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "eval_name": "enriquecimento-so-os-deltas",
+      "prompt": "Você é a skill agent-spec-rule-create. Já existe a rule .claude/rules/dependency-injection.md no projeto, com o eixo \"mecanismo\" preenchido (container) e os eixos \"lifetime/escopo\" e \"substituição em teste\" vazios (placeholders). NÃO peça confirmação — mostre o diff de enriquecimento e a rule resultante.",
+      "expected_output": "Modo ENRIQUECIMENTO: o diff classifica \"mecanismo\" como coerente (intocado) e \"lifetime/escopo\"/\"substituição em teste\" como vazio (resolvidos via árvore, 3 alternativas). Enriquece SÓ os deltas, preserva o conteúdo existente e reavalia o path match — inclusive se o matcher cobre a geração (DI é rule de produção; matcher só de código deixa a tech-spec órfã). NÃO reescreve a rule inteira nem reabre eixos coerentes.",
+      "files": []
+    }
+  ]
+}

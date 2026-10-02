@@ -1,0 +1,19 @@
+{
+  "skill_name": "agent-spec-testing-stack-bootstrap",
+  "evals": [
+    {
+      "id": 0,
+      "eval_name": "deriva-e-pergunta-so-o-nao-derivavel",
+      "prompt": "Você é a skill agent-spec-testing-stack-bootstrap. Projeto SEM rule de stack de teste. O manifesto e os testes existentes revelam o runner e as libs de unit/integração, mas não há nenhum teste E2E nem threshold de cobertura no CI. NÃO peça confirmação — gere: a decomposição dos 5 eixos marcando [derivado]/[a decidir], o questionário SÓ do não-derivável, e a rule final (assumindo respostas razoáveis).",
+      "expected_output": "Eixos base de execução / frameworks por camada / comando / convenções marcados [derivado] (resolvidos do código, sem virar pergunta). Eixos E2E e política de cobertura marcados [a decidir], cada um com 3 alternativas + recomendação. NÃO pergunta linguagem, runner ou padrão de arquivo de teste (tudo derivável). Gera a rule testing-stack.md com nome e path match propostos e EDITÁVEIS (matcher estreito), tabela 'Decisões de stack (árvore)' e relatório de criação. Exemplos plurais, sem pressupor uma única stack.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "eval_name": "enriquecimento-stale-e-vazio",
+      "prompt": "Você é a skill agent-spec-testing-stack-bootstrap. A rule testing-stack.md já existe, mas o comando de teste nela está defasado (o projeto trocou de runner) e o campo de política de flaky/quarentena está vazio. NÃO peça confirmação — mostre o diff e a rule enriquecida.",
+      "expected_output": "Modo ENRIQUECIMENTO: o diff marca o comando de teste como 'stale' (atualiza para o runner atual) e a política de flaky como 'vazio' (resolve via árvore); os demais campos coerentes ficam intocados. Reavalia o path match. Preserva o hand-authored, faz bump da data e acrescenta as novas folhas à tabela 'Decisões de stack'. NÃO reescreve a rule inteira.",
+      "files": []
+    }
+  ]
+}

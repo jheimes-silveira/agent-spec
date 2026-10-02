@@ -1,0 +1,73 @@
+{
+  "skill_name": "agent-spec-pre-refinement",
+  "evals": [
+    {
+      "id": 1,
+      "name": "ideia-vaga-fase1-esqueleto",
+      "prompt": "Quero criar um app para controlar minhas etiquetas",
+      "expected_output": "Skill deve fazer o Ancoramento no Projeto, NÃO salvar arquivo, e responder com a Fase 1: um esqueleto de 3-5 ramos concisos, pausando para o usuário validar antes de expandir. Não deve recomendar framework nem desenhar arquitetura.",
+      "files": [],
+      "expectations": [
+        "A skill NÃO salva o arquivo pre-refinement.md ainda (Fase 1 exige validação dos ramos antes)",
+        "A resposta inclui um entendimento da ideia em uma frase",
+        "A resposta apresenta um ESQUELETO com 3 a 5 ramos/bullets concisos (Fase 1)",
+        "Os ramos são dimensões de PRODUTO distintas (não requisitos técnicos nem a mesma coisa repetida)",
+        "A skill pausa e pergunta quais ramos explorar / se quer adicionar/remover/repriorizar (não avança para a Fase 2 sozinha)",
+        "A resposta NÃO recomenda nenhum framework (SDD/miniSpec/TaskCard) ainda",
+        "A resposta NÃO contém código, endpoints, schemas ou arquitetura"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "fix-pontual-taskcard",
+      "prompt": "Adicionar validação de CPF no endpoint POST /users/register. O CPF já é recebido como string no payload, basta validar formato e dígito verificador antes de persistir. Reuso da função existente em pkg/validators/cpf.go.",
+      "expected_output": "Ideia fechada: esqueleto curto + Fase 2 de 1 rodada confirmando escopo. Salva pre-refinement.md e recomenda TaskCard (amplitude 0-1 rumo, só dev, ajuste, sem arquitetura nova).",
+      "files": [],
+      "expectations": [
+        "A skill salva um arquivo pre-refinement.md",
+        "A skill NÃO força 3 direções candidatas onde a ideia é um fix fechado (Fase 2 curta é aceitável)",
+        "O arquivo contém a seção 10 (Ancoramento no Projeto) citando pkg/validators/cpf.go ou similar",
+        "O arquivo contém a seção 15 (Recomendação de Framework) preenchida",
+        "A recomendação é TaskCard (não SDD nem miniSpec)",
+        "A justificativa cita pelo menos 2 dimensões decisivas (amplitude, personas ou novidade)",
+        "A seção 15.3 (Alternativas) explica por que NÃO miniSpec",
+        "O comando de próximo passo é /agent-spec-taskcard-generate com a ideia entre aspas",
+        "Toda inferência da skill está marcada com [HIPÓTESE]"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "ideia-ampla-tot-sdd",
+      "prompt": "Quero criar um backend novo do zero para um sistema de figurinhas da Copa do Mundo. Vai ter cadastro de colecionadores, catálogo de figurinhas, sistema de trocas entre usuários, painel de moderação para denúncias, e integração com app mobile via API REST. Múltiplas personas envolvidas (colecionador, moderador, dev mobile, admin). Tecnologia ainda não decidida.",
+      "expected_output": "Ideia ampla: Fase 1 (esqueleto de ramos) + Fase 2 (árvore de rumos com direções candidatas e exemplos). Salva pre-refinement.md e recomenda SDD (4+ rumos OU múltiplas personas OU greenfield OU decisão arquitetural nova).",
+      "files": [],
+      "expectations": [
+        "A skill apresenta um esqueleto de 3-5 ramos na Fase 1 antes de aprofundar",
+        "A Fase 2 expande ramos em direções candidatas, cada uma com exemplo concreto e nota de viabilidade",
+        "A skill propõe sua leitura (qual direção recomenda e por quê) além de só perguntar",
+        "A skill salva um arquivo pre-refinement.md",
+        "O arquivo contém a seção 4 (Árvore de Rumos) com direções escolhidas/podadas registradas",
+        "O arquivo contém a seção 15 (Recomendação de Framework) preenchida",
+        "A recomendação é SDD (não TaskCard nem miniSpec)",
+        "A justificativa cita pelo menos 2 dimensões decisivas entre: amplitude 4+ rumos, múltiplas personas, greenfield, decisão arquitetural nova",
+        "A seção 15.3 (Alternativas) explica por que NÃO miniSpec E por que NÃO TaskCard",
+        "O comando de próximo passo é /agent-spec-sdd-generate-prd com a ideia entre aspas",
+        "A skill identifica múltiplos rumos/US implícitos (cadastro, catálogo, trocas, moderação, integração)"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "ancoramento-evita-fora-de-escopo",
+      "prompt": "Quero adicionar relatórios de vendas no nosso sistema de cardápio digital",
+      "expected_output": "Skill deve consultar PRDs/specs existentes (/docs/specs/**/*.md) e o codebase no Ancoramento, reaproveitar o que já existe, e marcar como [fora do escopo do projeto] qualquer rumo que extrapole o cardápio digital (ex.: virar um BI genérico).",
+      "files": [],
+      "expectations": [
+        "A skill faz o Ancoramento no Projeto consultando CLAUDE.md/README e varrendo /docs/specs/**/*.md por features existentes",
+        "A seção 10 do arquivo (ou a resposta, se ainda em Fase 1) cita PRDs/specs ou capacidades concretas consultadas",
+        "Se algum rumo extrapolar o escopo do projeto, ele é marcado como [fora do escopo do projeto] e NÃO entra no escopo inicial",
+        "A skill sinaliza ao usuário se a ideia duplica ou conflita com uma feature já especificada",
+        "A skill NÃO desenha arquitetura nem schema de banco para os relatórios"
+      ]
+    }
+  ]
+}

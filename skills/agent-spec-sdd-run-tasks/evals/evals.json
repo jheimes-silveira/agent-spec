@@ -1,0 +1,22 @@
+{
+  "skill_name": "agent-spec-sdd-run-tasks",
+  "notes": "Eval set ENXUTO (2 casos) focado em COMPREENSAO do skill. Subagentes fazem DRY-RUN: leem o skill, parseiam o frontmatter da task, descrevem o fluxo que executariam — SEM invocar executor/qa/tech-reviewer reais. Baseline (without_skill) foi PULADO para economizar tokens — avaliacao e qualitativa, nao quantitativa.",
+  "evals": [
+    {
+      "id": 0,
+      "name": "dry-run-fluxo-tarefa-T1",
+      "prompt": "Voce esta sendo invocado como o skill 'agent-spec-sdd-run-tasks' com os seguintes argumentos:\n\ntask_plan_path = docs/specs/features/carrinho-eval-0/v1/task_plan.md\nagent_name = stack-agent\n\nFaca um DRY-RUN da execucao da PRIMEIRA task (T1) do task_plan. NAO invoque nenhum subagente real (nao chame agent-spec-qa-validator, agent-spec-staff-architecture-review, nem o executor). Em vez disso, produza um relatorio em portugues brasileiro contendo:\n\n1. Frontmatter parseado da T1 (campos model, risk, gates, files_to_create_count quando presentes)\n2. Modelo resolvido para o executor + JUSTIFICATIVA (declarado/regra/fallback)\n3. Lista exata dos subagentes que seriam invocados, na ordem, com o modelo de cada um\n4. Quais arquivos voce LERIA antes de invocar o executor (paths relativos)\n5. Os logs de '[T1] executor: ... gates: ...' que voce emitiria\n\nO objetivo e validar que voce entendeu o fluxo do skill — NAO execute.",
+      "expected_output": "Relatorio dry-run claro mostrando: (a) model/risk/gates parseados de T1.md; (b) modelo resolvido com justificativa; (c) sequencia executor->qa-validator->agent-spec-staff-architecture-review (ou skip se gates=none/[qa]); (d) leitura proativa de tech_spec/prd/qa_context; (e) log emitido conforme secao 6 do model-selection embutido.",
+      "files": [],
+      "assertions": []
+    },
+    {
+      "id": 1,
+      "name": "auto-escalate-retry-cenario",
+      "prompt": "Voce esta atuando como o skill 'agent-spec-sdd-run-tasks'. Considere o seguinte CENARIO HIPOTETICO (nao execute nada — apenas explique o comportamento):\n\nUma task T5 do task_plan tem frontmatter:\n- model: sonnet\n- risk: medium\n- gates: [qa, tech_review]\n\nA execucao acabou de falhar pela 2a vez com o veredito do agent-spec-qa-validator contendo severity=ALTO (problemas bloqueantes em validacao de input). O retry counter no shared.temp_memory.dir/T5.md (resolvido para docs/specs/features/{feature}/{version}/_run/tmp/T5.md) indica attempt_count=2.\n\nProduza em portugues brasileiro:\n\n1. Decisao do orquestrador: o executor sera reinvocado com qual modelo na 3a tentativa? Justifique cidando a regra exata da secao 'Configuracao Embutida' do skill (auto_escalate / after_attempts / severity_trigger).\n2. O que sera escrito no shared.workflow_report.path como log da escalacao? Forneca o texto exato.\n3. O modelo do agent-spec-qa-validator e do agent-spec-staff-architecture-review na 3a tentativa: vai escalar tambem? Cite a regra exata.\n4. Se a 3a tentativa AINDA falhar, qual e o limite e o que o skill faz? Cite a regra do skill.\n\nNao invoque ferramentas alem de Read no skill. NAO execute o executor real.",
+      "expected_output": "Resposta correta cita: auto-escalate sonnet->opus apos 2 tentativas OU severity=ALTO; log no _run/workflow-report.md (telemetria, nao no _run/run-report.md humano) no formato '{task.id} escalado sonnet->opus (tentativa N, severity=ALTO)'; tech-reviewer escala em retry_attempt_gte:1 + severity ALTO (security_flags); limite 3 tentativas com escalacao ao usuario.",
+      "files": [],
+      "assertions": []
+    }
+  ]
+}
